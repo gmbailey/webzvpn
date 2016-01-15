@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<webzvpn>
+  <servers>
+  
+    <data>
+      <name>United Kingdom</name>   
+      <ip>vtuk.webzvpn.ru</ip>          
+      <load>0</load>  
+    </data>
+    
+	<data>
+      <name>United Kingdom 2</name>
+      <ip>vnetuk.webzvpn.ru</ip>
+      <load>0</load>  
+    </data>
+
+    
+  </servers>
+</webzvpn>

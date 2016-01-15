@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>ConnectPage.qml</file>
+        <file>ServersPage.qml</file>
+    </qresource>
+</RCC>
