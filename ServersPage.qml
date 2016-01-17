@@ -1,7 +1,9 @@
 import QtQuick 2.5
 import QtQuick.Controls 1.3 as QuickControls
-import Material 0.1
+import Material 0.2
 import Material.Extras 0.1
+import QtQuick.Layouts 1.1
+import Material.ListItems 0.1 as ListItem
 
 Page {
     id: serversPage
@@ -23,12 +25,16 @@ Page {
         for (var k = 0; k < servers.length; k++){
             comboModel.append({"name": servers[k].name})
         }
+        if (servers.length > 0)
+            return true
+        else
+            return false
     }
 
     function loadServerXml(){
         xmlResp = FileHandler.read("servers.xml")
         ServerHandler.setupServerList(xmlResp)
-        setupServComboBox()
+        return setupServComboBox()
     }
 
     function getServers(url) {
@@ -42,13 +48,17 @@ Page {
                         pageResp = Qt.atob(pageResp)
                     }
                 }
+                else {
+                    return false
+                }
             }
         }
         doc.setRequestHeader("Content-Encoding", "UTF-8");
         doc.send();
 
         ServerHandler.setupServerList(xmlResp)
-        setupServComboBox()
+
+        return setupServComboBox()
     }
 
     Rectangle {
@@ -67,7 +77,16 @@ Page {
 
             MenuField {
                 id: comboServers
+                width: Units.dp(200)
                 model: comboModel
+            }
+
+            ListItem.Standard {
+                text: "United Kingdom"
+                action: CircleImage {
+                    anchors.fill: parent
+                    source: Qt.resolvedUrl("/flags/flags/GB.png")
+                }
             }
 
             onAccepted: {
@@ -85,5 +104,7 @@ Page {
             FileHandler.save(pageResp, "servers.xml")
         }
         serverDialog.show()
+
+
     }
 }

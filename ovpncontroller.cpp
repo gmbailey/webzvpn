@@ -1,26 +1,18 @@
 #include "ovpncontroller.h"
+#include "version.h"
 
 OvpnController::OvpnController(QObject *parent) :
     QObject(parent),
     _state(OVSTATE_DISCONNECTED),
-    server(""),
-    port(50005),
     compressed(true),
     pid(0)
 {
-    QSettings settings;
-    settings.setValue("showAll", false);
-    // Read configuration settings
-    server = settings.value("server", "vnetuk.webzvpn.ru").toString();
-    port = settings.value("port", 50005).toInt();
-    compressed = settings.value("compressed", true).toBool();
-    caCertFile = settings.value("caCertFile", "").toString();
-    configFile = settings.value("configFile", "").toString();
-    userPass = settings.value("password", "qwerty").toString();
-    userName = settings.value("username", "qwerty").toString();
+    newIp = "127.0.0.1";
 
     default_dns[0] = "146.185.134.104";
     default_dns[1] = "192.241.172.159";
+
+    loadSettings();
 }
 
 QString OvpnController::getLogText() const{
@@ -37,6 +29,14 @@ QString OvpnController::getUserPass() const{
 
 QString OvpnController::getServer() const{
     return server;
+}
+
+QString OvpnController::getServerName() const{
+    return serverName;
+}
+
+QString OvpnController::getServerLoad() const{
+    return serverLoad;
 }
 
 unsigned int OvpnController::getPort() const{
@@ -63,13 +63,12 @@ void OvpnController::StartTimer(){
     if (NULL != _timer_state.get())
         _timer_state->stop();
     _timer_state.reset(new QTimer(this));
-    connect(_timer_state.get(), SIGNAL(timeout()), this, SLOT(Timer_CheckState()));
+    connect(_timer_state.get(), SIGNAL(timeout()), this, SLOT(timer_CheckState()));
     _timer_state->start(1200);
 }
 
 void OvpnController::checkState(){
-    if (isOvRunning())
-    {
+    if (isOvRunning()){
         if (NULL != soc.get()){
             if (soc->isOpen() && soc->isValid()){
                 if (soc->state() == QAbstractSocket::ConnectedState){
@@ -86,11 +85,48 @@ void OvpnController::checkState(){
     }
 }
 
+void OvpnController::findOldIp(){
+    qDebug() << "findOldIp: started";
+    if (_th_oldip.get() == NULL){
+        _th_oldip.reset(new Thread_OldIp());
+        connect(_th_oldip.get(), &Thread_OldIp::resultReady, this, &OvpnController::processOldIp);
+        _th_oldip->start();
+    }
+}
+
+void OvpnController::processOldIp(QString ip){
+    oldIp = ip;
+    qDebug() << "old ip: " << oldIp;
+    delete _th_oldip.release();
+}
+
+bool OvpnController::getAutoStart() const{
+    return autoStart;
+}
+
+bool OvpnController::getAutoConnect() const{
+    return autoConnect;
+}
+
+bool OvpnController::getAutoReconnect() const{
+    return autoReconnect;
+}
+
+bool OvpnController::getRememberLogin() const{
+    return rememberLogin;
+}
+
+QString OvpnController::getCurVersion() const{
+    return curVersion;
+}
+
 void OvpnController::startConn(){
+//    findOldIp();          Disabled atm
+
     setState(OVSTATE_DISCONNECTED);
     stopConn();
 
-    setState(OVSTATE_CONNECTING);
+    setState(OVSTATE_STARTING);
     try{
         OsSpecific::Instance()->SetIPv6(true);
 #ifdef Q_OS_WIN
@@ -100,9 +136,8 @@ void OvpnController::startConn(){
     catch(std::exception & ex)
     {
         log::logt(ex.what());
-      //  if (Setting::Instance()->IsDisableIPv6())
+      //  if (IsDisableIPv6())
       //  {
-      //      WndManager::Instance()->ErrMsg(QString("Cannot disable IPv6 ") + ex.what());
             return;
       //  }
     }
@@ -136,10 +171,10 @@ void OvpnController::startConn(){
         ff.write("client\n");
         ff.write("dev tun\n");
         ff.write("proto "); ff.write("udp\n");
-        ff.write("remote "); ff.write("vnetuk.webzvpn.ru"); ff.write(" "); ff.write("50005"); ff.write("\n");
+        ff.write("remote "); ff.write(server.toLatin1()); ff.write(" "); ff.write("50005"); ff.write("\n");
         ff.write("resolv-retry infinite\n");
-//        ff.write("cipher AES-256-CBC\n");
-//        ff.write("auth SHA512\n");
+        ff.write("cipher AES-256-CBC\n");
+        ff.write("auth SHA512\n");
         ff.write("user nobody\n");
         ff.write("group nobody\n");
         ff.write("nobind\n");
@@ -152,6 +187,9 @@ void OvpnController::startConn(){
         ff.write("reneg-sec 0\n");
         ff.write("route-method exe\n");
         ff.write("route-delay 2\n");
+        ff.write("explicit-exit-notify 2");
+        ff.write("ping 10");
+        ff.write("ping-restart 120");
 
 
         ff.flush();
@@ -165,13 +203,13 @@ void OvpnController::startConn(){
 
     QStringList args;
     args
-//			<< "--auth-nocache"
-        << "--config" << PathHelper::Instance()->OpenvpnConfigPfn() // /tmp/proxysh.ovpn
+        << "--auth-nocache"
+        << "--config" << PathHelper::Instance()->OpenvpnConfigPfn() // /tmp/webzvpn.ovpn
 
 #ifndef Q_OS_WIN
         << "--daemon"	// does not work at windows
 #endif
-        << "--ca" << PathHelper::Instance()->ProxyshCaCert()	// /tmp/proxysh.crt
+        << "--ca" << PathHelper::Instance()->ProxyshCaCert()	// /tmp/webzvpn.crt
         << "--management" << localAddr << QString::number(getPort())
         << "--management-hold"
         << "--management-query-passwords"
@@ -254,12 +292,6 @@ void OvpnController::startConn(){
 }
 
 void OvpnController::stopConn(){
-/*    if (process != NULL) {
-
-        process->terminate();
-        setStatus(OVSTATE_DISCONNECTING);
-    }
-*/
     if (isOvRunning()){
         if (NULL != soc.get()){
             if (soc->isOpen() && soc->isValid())
@@ -361,13 +393,13 @@ AA();						break;
                 case 2: is = false;		// grep failure
                     break;
                 default:
-AA();					log::logt("IsOvRunning(): ps-grep return code = " + QString::number(re));
+AA();					log::logt("isOvRunning(): ps-grep return code = " + QString::number(re));
                     break;
             }
         }
 #endif  // else WIN32
     }
-//log::logt(QString("IsOvRunning() returns ") + QString(is ? "true": "false") );
+//log::logt(QString("isOvRunning() returns ") + QString(is ? "true": "false") );
 AA();	return is;
 }
 
@@ -383,7 +415,7 @@ void OvpnController::readError(QProcess::ProcessError error){
 
     // Disconnect
     stopConn();*/
-    log::logt("Scr_Connect::ConnectError(): error = " + QString::number(error));
+    log::logt("readError(): error = " + QString::number(error));
 }
 
 void OvpnController::readData(){
@@ -400,19 +432,18 @@ void OvpnController::readData(){
 }
 
 void OvpnController::readStdErr(){
-    log::logt("ReadStderr(): " + process->readAllStandardError());
+    log::logt("readStderr(): " + process->readAllStandardError());
 }
 
 void OvpnController::readStdOut(){
-    log::logt("ReadStdout(): " + process->readAllStandardOutput());
+    log::logt("readStdout(): " + process->readAllStandardOutput());
 }
 
 void OvpnController::connectStarted(){
-    log::logt("ConnectStarted()");
+    log::logt("connectStarted()");
 }
 
 void OvpnController::finished(int exitCode, QProcess::ExitStatus exitStatus){
-    qDebug() << "in finished";
     // OpenVpn crushed or just spawn a child and exit during startup
     if (exitCode != 0){	// TODO: -1 handle open vpn process startup
 
@@ -490,31 +521,25 @@ void OvpnController::logAppend(const QString &text){
 }
 
 void OvpnController::logFileChanged(const QString &pfn){
-    qDebug() << "logFileChanged Start";
     if (processing || _err)
         return;
 
-    qDebug() << " logFileChanged";
     processing = true;
 
-    if (pfn == PathHelper::Instance()->OpenvpnLogPfn())
-    {
+    if (pfn == PathHelper::Instance()->OpenvpnLogPfn()){
         QFile f(pfn);
         QByteArray ba;
-        if (f.open(QIODevice::ReadOnly))		// TODO: -2 ensure non-blocking
-        {
+        if (f.open(QIODevice::ReadOnly)){		// TODO: -2 ensure non-blocking
             if (lastpos > f.size())		// file was truncated
                 lastpos = 0;
-            if ((lastpos + 1) < f.size())
-            {
+            if ((lastpos + 1) < f.size()){
                 f.seek(lastpos);
                 ba = f.read(f.size() - lastpos);
                 lastpos = f.size();
             }
             f.close();
         }
-        if (!ba.isEmpty())
-        {
+        if (!ba.isEmpty()){
             QString s1(ba);
             QStringList sl = s1.split('\n', QString::SkipEmptyParts);
             for (int k = 0; k < sl.size(); ++k)
@@ -557,6 +582,8 @@ void OvpnController::setUserName(const QString &value){
         userName = value;
         settingsSetValue("username", value);
 
+        qDebug() << "username set: " << userName;
+
         emit usernameChanged(userName);
     }
 }
@@ -566,7 +593,67 @@ void OvpnController::setUserPass(const QString &value){
         userPass = value;
         settingsSetValue("password", value);
 
+        qDebug() << "password set: " << userPass;
+
         emit passwordChanged(userPass);
+    }
+}
+
+void OvpnController::setAutoStart(bool val){
+    if (autoStart != val){
+        autoStart = val;
+
+        settingsSetValue("autoStart", val);
+        qDebug() << "autostart configured: " << val;
+        if (autoStart){
+#ifdef Q_WS_WIN
+            QSettings regSettings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",QSettings::NativeFormat);
+            regSettings.setValue("Webz VPN Client", QGuiApplication::applicationFilePath().replace('/','\\'));
+
+#endif
+
+#ifdef Q_OS_OSX
+            QSettings settings("info.plist", QSettings::NativeFormat);
+            settings.setValue("RunAtLoad", autoStart);
+#endif
+        }
+        else{
+#ifdef Q_WS_WIN
+            regSettings.remove("Webz VPN Client");
+#endif
+
+#ifdef Q_OS_OSX
+            settings.remove("RunAtLoad");
+#endif
+        }
+
+    }
+}
+
+void OvpnController::setAutoConnect(bool val){
+    if (autoConnect != val){
+        autoConnect = val;
+
+        settingsSetValue("autoConnect", val);
+        qDebug() << "autoConnect configured: " << val;
+    }
+}
+
+void OvpnController::setAutoReconnect(bool val){
+    if (autoReconnect != val){
+        autoReconnect = val;
+
+        settingsSetValue("autoReconnect", val);
+        qDebug() << "autoReconnect configured: " << val;
+    }
+}
+
+void OvpnController::setRememberLogin(bool val){
+    if (rememberLogin != val){
+        rememberLogin = val;
+
+        settingsSetValue("rememberLogin", val);
+        qDebug() << "rememberLogin configured: " << val;
     }
 }
 
@@ -576,6 +663,19 @@ void OvpnController::setServer(const QString &value){
         settingsSetValue("server", value);
         emit serverChanged(server);
     }
+}
+
+void OvpnController::setServerName(const QString &value){
+    serverName = value;
+    settingsSetValue("serverName", value);
+    emit serverNameChanged(serverName);
+}
+
+void OvpnController::setServerLoad(const QString &value){
+    serverLoad = value;
+    settingsSetValue("serverLoad", value);
+    emit serverLoadChanged(serverLoad);
+
 }
 
 void OvpnController::setPort(unsigned int value){
@@ -615,7 +715,7 @@ void OvpnController::setIp(const QString &value){
         newIp = value;
         settingsSetValue("newIp", value);
         emit ipChanged(newIp);
-        qDebug() << "setIp called";
+        qDebug() << "setIp called: " << newIp;
     }
 
 }
@@ -658,20 +758,29 @@ void OvpnController::initWatcher(){
 }
 
 void OvpnController::processOvLogLine(const QString &s){
-    qDebug() << "processOvLogLine";
-    if (s.contains("MANAGEMENT: CMD 'state'", Qt::CaseInsensitive))
-    {
+    if (s.contains("MANAGEMENT: CMD 'state'", Qt::CaseInsensitive)){
         qDebug() << "in Management: CMD 'state'";
         ;	// skip our commands
-    } else {
+    }
+    else {
         log::logt("OpenVPNlogfile: " + s);
-    if (s.contains("TCPv4_CLIENT link remote:", Qt::CaseInsensitive)) {
-        extractNewIp(s);
-    } else { if (s.contains("Initialization Sequence Completed:", Qt::CaseInsensitive)) {
-        gotConnected(s);
-    } else { if (s.contains("Opening utun (connect(AF_SYS_CONTROL)): Operation not permitted", Qt::CaseInsensitive)) {
-        gotTunErr(s);
-    }}}}
+        if (s.contains("TCPv4_CLIENT link remote:", Qt::CaseInsensitive)) {
+            qDebug() << "processOvLogLine: extractNewIp";
+            extractNewIp(s);
+        }
+        else {
+            if (s.contains("Initialization Sequence Completed:", Qt::CaseInsensitive)) {
+                qDebug() << "processOvLogLine: gotConnected";
+                gotConnected(s);
+            }
+            else {
+                if (s.contains("Opening utun (connect(AF_SYS_CONTROL)): Operation not permitted", Qt::CaseInsensitive)) {
+                    qDebug() << "processOvLogLine: gotTunErr";
+                    gotTunErr(s);
+                }
+            }
+        }
+    }
 }
 
 void OvpnController::extractNewIp(const QString &s){
@@ -680,19 +789,18 @@ void OvpnController::extractNewIp(const QString &s){
     p0 = s.indexOf(':', p0 + 1);
     if (p0 > -1){
         int p1 = s.indexOf(':', p0 + 1);
-        if (p1 > -1)
-        {
+        if (p1 > -1){
 
             int points[3];
             points[0] = s.indexOf('.', p0);
             int p2 = points[0] - 1;
-            for (; p2 > p0; --p2)
-            {
+            for (; p2 > p0; --p2){
                 if (!s[p2].isDigit())
                     break;
             }
             QString ip = s.mid(p2 + 1, p1 - p2 - 1);
             setIp(ip);
+            qDebug() << "extractNewIp: " << ip;
         }
     }
 }
@@ -701,10 +809,12 @@ void OvpnController::gotConnected(const QString &s){
     setState(OVSTATE_CONNECTED);
     // extract IP
     //1432176303,CONNECTED,SUCCESS,10.14.0.6,91.219.237.159
+    qDebug() << "gotConnected: started";
     int p = -1;
     for (int k = 0; k < 4; ++k)
         p = s.indexOf(',', p + 1);
     if (p > -1){
+        qDebug() << "gotConnected: if (p > -1)";
         QString ip = s.mid(p + 1);
         setIp(ip);
     }
@@ -722,7 +832,6 @@ void OvpnController::gotTunErr(const QString &s){
 }
 
 void OvpnController::processLine(QString s){
-    qDebug() << "processLine";
     if (s.startsWith('>')){
         // >PASSWORD:Need 'Auth' username/password
         int p = s.indexOf(':');
@@ -788,8 +897,7 @@ void OvpnController::processRtWord(const QString &word, const QString &s){
     if (word.compare("INFO", Qt::CaseInsensitive) == 0) {
         // INFO:
         // just ignore
-    } else { if (word.compare("HOLD", Qt::CaseInsensitive) == 0)
-    {
+    } else { if (word.compare("HOLD", Qt::CaseInsensitive) == 0){
         if (s.indexOf("hold release") > -1)
         {
             log::logt("hold off");
@@ -811,8 +919,7 @@ void OvpnController::processRtWord(const QString &word, const QString &s){
         }
         else{
             int p = s.indexOf(':');
-            if (s.indexOf("Verification Failed", p, Qt::CaseInsensitive) > -1)
-            {
+            if (s.indexOf("Verification Failed", p, Qt::CaseInsensitive) > -1){
                 _err = true;
                 // OpenVpn exiting
                 showErrMsgAndCleanup(s.mid(p + 1));
@@ -864,7 +971,7 @@ void OvpnController::processStateWord(const QString &word, const QString &s){
     } else { if (word.compare("RECONNECTING", Qt::CaseInsensitive) == 0) {
         setState(OVSTATE_CONNECTING);
     } else { if (word.compare("AUTH", Qt::CaseInsensitive) == 0) {
-        setState(OVSTATE_CONNECTING);
+        setState(OVSTATE_AUTHORIZING);
     } else { if (word.compare("ASSIGN_IP", Qt::CaseInsensitive) == 0) {
         setState(OVSTATE_CONNECTING);
     }}}}}
@@ -881,6 +988,7 @@ void OvpnController::showErrMsgAndCleanup(QString msg){
 void OvpnController::setState(OvpnState newState){
     if (_state != newState) {
         _state = newState;
+        qDebug() << "setState: " << _state << "  |  " << newState;
         emit stateChanged(newState);
     }
 }
@@ -910,7 +1018,7 @@ void OvpnController::getArgs(){
         ff.write("client\n");
         ff.write("dev tun\n");
         ff.write("proto "); ff.write("udp\n");
-        ff.write("remote "); ff.write("vnetuk.webzvpn.ru"); ff.write(" "); ff.write("50005"); ff.write("\n");
+        ff.write("remote "); ff.write("vnetuk.webzvpn.ru"); ff.write(" "); ff.write("5005"); ff.write("\n");
         ff.write("resolv-retry infinite\n");
 //        ff.write("cipher AES-256-CBC\n");
 //        ff.write("auth SHA512\n");
@@ -937,8 +1045,6 @@ void OvpnController::getArgs(){
 
         return;
     }
-
-    qDebug() << "After config file made";
 
     //Config File Built, build Program Args
     arguments.clear();
@@ -1011,4 +1117,34 @@ void OvpnController::settingsSetValue(QString key, int value){
     QSettings settings;
 
     settings.setValue(key, value);
+}
+
+void OvpnController::loadSettings(){
+    QSettings settings;
+
+    // Read configuration settings
+
+    server = settings.value("server", "").toString();
+    port = settings.value("port", 5005).toInt();
+    serverLoad = settings.value("serverLoad", "").toString();
+    compressed = settings.value("compressed", true).toBool();
+    caCertFile = settings.value("caCertFile", "").toString();
+    configFile = settings.value("configFile", "").toString();
+    rememberLogin = settings.value("rememberLogin", true).toBool();
+
+    if (rememberLogin){
+        userPass = settings.value("password", "").toString();
+        userName = settings.value("username", "").toString();
+    }
+
+    serverName = settings.value("serverName", "").toString();
+
+    qDebug() << "serverName: " << serverName;
+    qDebug() << "user/pass: " << userName << " " << userPass;
+
+    autoStart = settings.value("autoStart", true).toBool();
+    autoConnect = settings.value("autoConnect", true).toBool();
+    autoReconnect = settings.value("autoReconnect", true).toBool();
+
+    curVersion = QString::number(WEBZ_MAJOR) + "." + QString::number(WEBZ_MINOR);
 }

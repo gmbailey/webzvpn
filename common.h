@@ -30,7 +30,7 @@ bool OpenUrl_Update();
 
 //extern const QString & GetSettingsFn();
 
-#define SETTINGS_OBJ QSettings settings("proxy.sh", "Safejumper")
+#define SETTINGS_OBJ QSettings settings("webzvpn", "Webz VPN Client")
 //#define CB_SAVE_VALUE(name) do { SETTINGS_OBJ; settings.setValue(BOOST_PP_STRINGIZE(name), ui-> ##name## ->isChecked()); } while (0)
 
 void SaveCb(const char * name, bool val);

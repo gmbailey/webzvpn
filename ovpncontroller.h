@@ -17,10 +17,13 @@
 #include "osspecific.h"
 #include "common.h"
 #include <QTimer>
+#include <thread_oldip.h>
 
 enum OvpnState {
     OVSTATE_DISCONNECTED = 0,
 
+    OVSTATE_STARTING,
+    OVSTATE_AUTHORIZING,
     OVSTATE_CONNECTING,
     OVSTATE_CONNECTED,
     OVSTATE_DISCONNECTING,
@@ -42,6 +45,15 @@ class OvpnController : public QObject
     Q_PROPERTY (QString caCertFile READ getCaCertFile WRITE setCaCertFile NOTIFY caCertFileChanged)
     Q_PROPERTY (QString configFile READ getConfigFile WRITE setConfigFile NOTIFY configFileChanged)
     Q_PROPERTY (QString newIp READ getIp WRITE setIp NOTIFY ipChanged)
+    Q_PROPERTY (QString serverName READ getServerName WRITE setServerName NOTIFY serverNameChanged)
+    Q_PROPERTY (QString serverLoad READ getServerLoad WRITE setServerLoad NOTIFY serverLoadChanged)
+    //application settings
+    Q_PROPERTY (bool autoStart READ getAutoStart WRITE setAutoStart)
+    Q_PROPERTY (bool autoConnect READ getAutoConnect WRITE setAutoConnect)
+    Q_PROPERTY (bool autoReconnect READ getAutoReconnect WRITE setAutoReconnect)
+    Q_PROPERTY (bool rememberLogin READ getRememberLogin WRITE setRememberLogin)
+    Q_PROPERTY (QString curVersion READ getCurVersion)
+
 
 public:
     explicit OvpnController(QObject *parent = 0);
@@ -54,6 +66,9 @@ public:
 
     // Configuration getters
     QString getServer() const;
+    QString getServerName() const;
+    QString getServerLoad() const;
+
     unsigned int getPort() const;
     bool getCompressed() const;
     QString getCaCertFile () const;
@@ -66,13 +81,26 @@ public:
     void StartTimer();
     void checkState(); // timer calls it
 
+    void findOldIp();
+    void processOldIp(QString ip);
+
+    //Application Settings
+    bool getAutoStart() const;
+    bool getAutoConnect() const;
+    bool getAutoReconnect() const;
+    bool getRememberLogin() const;
+
+    //Version Info
+    QString getCurVersion() const;
 
 signals:
-    void stateChanged(int state);
+    void stateChanged(int ovState);
     void logTxtChanged(QString & logTxt);
 
     // Configuration change signals
     void serverChanged(QString &server);
+    void serverNameChanged(QString &serverName);
+    void serverLoadChanged(QString &serverLoad);
     void portChanged(unsigned int port);
     void compressedChanged(bool compressed);
     void caCertFileChanged(QString &caCertFile);
@@ -105,8 +133,17 @@ public slots:
     void setUserName(const QString &value);
     void setUserPass(const QString &value);
 
+    // Application settings
+    void setAutoStart(bool val);
+    void setAutoConnect(bool val);
+    void setAutoReconnect(bool val);
+    void setRememberLogin(bool val);
+
     // Config Settings
     void setServer(const QString &value);
+    void setServerName(const QString &value);
+    void setServerLoad(const QString &value);
+
     void setPort(unsigned int value);
     void setCompressed(bool value);
     void setCaCertFile(const QString &value);
@@ -121,6 +158,8 @@ private:
 
     //Config Options
     QString server;
+    QString serverName;
+    QString serverLoad;
     unsigned int port;
     bool compressed;
     QString caCertFile;
@@ -132,6 +171,12 @@ private:
 
     //Status
     QString newIp;
+
+    //Application Settings
+    bool autoStart;
+    bool autoConnect;
+    bool autoReconnect;
+    bool rememberLogin;
 
     std::auto_ptr<QTemporaryFile> _paramFile;
     std::auto_ptr<QProcess> process;
@@ -168,8 +213,14 @@ private:
     void settingsSetValue (QString key, QString value);
     void settingsSetValue (QString key, int value);
 
+    void loadSettings();
+
     std::auto_ptr<QFileSystemWatcher> _watcher;
     std::auto_ptr<QTimer> _timer_state;
+    std::auto_ptr<Thread_OldIp> _th_oldip;
     QString default_dns[2];
+    QString oldIp;
+
+    QString curVersion;
 };
 #endif // OVPNCONTROLLER_H

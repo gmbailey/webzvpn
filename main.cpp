@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
 
     app.setOrganizationName("webzvpn");
     app.setOrganizationDomain("www.webzvpn.ru");
-    app.setApplicationName("webzvpn");
+    app.setApplicationName("Webz VPN Client");
 
     QQmlApplicationEngine engine;
 

@@ -69,7 +69,7 @@ QString PathHelper::OvRelativePfn()
     return "/openvpn/openvpn-2.3.2/openvpn-executable";
 #endif
 #ifdef Q_OS_WIN
-    return "/openvpn-proxysh.exe";
+    return "/openvpn-webzvpn.exe";
 #endif
 }
 

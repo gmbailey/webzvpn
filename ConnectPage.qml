@@ -1,34 +1,76 @@
-import QtQuick 2.0
-import Material 0.1
+import QtQuick 2.4
+import Material 0.2
+import QtQuick.Layouts 1.1
+import Material.ListItems 0.1 as ListItem
+import Material.Extras 0.1
+
 
 Page {
     id: connectPage
 
-    function updateStatus(status) {
-        switch (status) {
+    property bool isLoading: false
+    property bool displayStatus: true
+    property int loginState: -1             //0 login invalid, 1 login valid: credentials found
+
+    function checkLogin() {
+        console.log("in checkLogin")
+        if (OvpnController.userName == "" || OvpnController.userPass == ""){
+            loginDialog.show()
+        }
+        else {
+            loginState = 1
+        }
+    }
+
+    function autoConnect() {
+        console.log("in autoConnect")
+        if (OvpnController.autoConnect){
+            checkLogin()
+            if (loginState == 1)
+                OvpnController.startConn()
+        }
+    }
+
+    function updateStatus(ovState) {
+        switch (ovState) {
         case 0:
             statusText.text = "Disconnected"
-            busy.indeterminate = false
+            isLoading = false
             connect.enabled = true
-            disconnect.enabled = false
+            connect.text = "Connect"
+            mainWindow.theme.primaryColor = Palette.colors["blue"]["500"]
             break
         case 1:
-            statusText.text = "Connecting"
-            busy.indeterminate = true
-            connect.enabled = false
-            disconnect.enabled = true
+            statusText.text = "Starting"
+            isLoading = true
+            connect.enabled = true
+            connect.text = "Cancel"
             break
         case 2:
-            statusText.text = "Connected"
-            busy.indeterminate = false
-            connect.enabled = false
-            disconnect.enabled = true
+            statusText.text = "Authorizing"
+            isLoading = true
+            connect.enabled = true
+            connect.text = "Cancel"
             break
         case 3:
+            statusText.text = "Connecting"
+            isLoading = true
+            connect.enabled = true
+            connect.text = "Cancel"
+            break
+        case 4:
+            statusText.text = "Connected"
+            isLoading = false
+            connect.enabled = true
+            connect.text = "Disconnect"
+            mainWindow.theme.primaryColor = Palette.colors["green"]["500"]
+            break
+        case 5:
             statusText.text = "Disconnecting"
-            busy.indeterminate = true
+            isLoading = true
             connect.enabled = false
-            disconnect.enabled = false
+            connect.text = "Connect"
+            mainWindow.theme.primaryColor = Palette.colors["red"]["500"]
             break
         }
     }
@@ -36,85 +78,269 @@ Page {
     Connections {
         target:OvpnController
         onStateChanged: {
-            updateStatus(status)
+            console.log("status: " + ovState)
+            updateStatus(ovState)
         }
     }
-    Column {
-        id: column
 
-        width: parent.width
-        spacing: Theme.paddingLarge
+    Column{
+        id: column
+        anchors.fill: parent
+        anchors.margins: Units.dp(5)
+        spacing: 3
 
         Row {
-            spacing: Theme.paddingLarge
+            id: buttonRow
             anchors.horizontalCenter: parent.horizontalCenter
+            spacing: Units.dp(4)
+
             Button {
                 id: connect
+                width: Units.dp(200)
+                height: Units.dp(50)
+                backgroundColor: Palette.colors["blue"]["300"]
+                elevation: 1
                 text: "Connect"
                 enabled: true
                 onClicked: {
-                    OvpnController.logAppend('\n')
-                    OvpnController.startConn()
+                    if (statusText.text == "Disconnected"){
+                        checkLogin()
+                        console.log("in connect: login = " + loginState)
+                        if (loginState == 1)
+                            OvpnController.startConn()
+                    }
+                    else {
+                        OvpnController.stopConn()
+                    }
+                }
+                Label {
+                    id: serverNameLbl
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: Units.dp(15)
+                    text: OvpnController.serverName
                 }
             }
+
             Button {
-                id : disconnect
-                text: "Disconnect"
+                id : serverSelection
+                width: Units.dp(50)
+                height: Units.dp(50)
+                backgroundColor: Palette.colors["blue"]["300"]
+                elevation: 1
                 enabled: true
-                onClicked: OvpnController.stopConn();
+                Icon {
+                    anchors.centerIn: parent
+                    name: "awesome/map_marker"
+                    size: Units.dp(24)
+                }
+
+                onClicked: {
+                    serverDialog.show()
+                }
             }
         }
 
-        Label {
-            id: statusText
-            text: "No status"
-            color: Theme.highlightColor
-            anchors.horizontalCenter: parent.horizontalCenter
-            font.family: Theme.fontFamilyHeading
-        }
         Row {
-            spacing: Theme.paddingLarge
+            spacing: Units.dp(8)
             anchors.horizontalCenter: parent.horizontalCenter
             ProgressCircle {
                 id: busy
                 anchors.verticalCenter: parent.verticalCenter
-                indeterminate: false
-                minimumValue: 0
-                maximumValue: 100
-
+                visible: connectPage.isLoading
             }
         }
 
-        Rectangle {
-            color: "transparent"
-            border {
-                color: Theme.highlightBackgroundColor
-                width: 1
+        //Status
+        ListItem.Standard {
+            showDivider: true
+            content:
+                Label {
+                id: statusText
+                text: "Disconnected"
+                anchors.centerIn: parent
+                font.family: "Roboto"
+                font.weight: Font.DemiBold
+                font.pixelSize: Units.dp(24)
             }
-            //radius: Theme.paddingSmall
+        }
+
+        //Server Load Display
+        ListItem.Standard {
+            id: serverLoad
+            interactive: false
+            showDivider: true
+            Icon {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Units.dp(20)
+                name: "action/info"
+                size: Units.dp(24)
+            }
+            content: Column{
+                anchors.centerIn: parent
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Server Load"
+                    font.family: "Roboto"
+                    font.weight: Font.Bold
+                    font.pixelSize: Units.dp(10)
+                }
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: OvpnController.serverLoad
+                    style: "title"
+                }
+            }
+        }
+
+        //Server IP Display
+        ListItem.Standard {
+            id: serverIp
+            interactive: false
+            showDivider: true
+            Icon {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Units.dp(20)
+                name: "awesome/lock"
+                size: Units.dp(24)
+            }
+            content: Column{
+                anchors.centerIn: parent
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "IP Address"
+                    font.family: "Roboto"
+                    font.weight: Font.Bold
+                    font.pixelSize: Units.dp(10)
+                }
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: OvpnController.newIp
+                    style: "title"
+                }
+            }
+        }
+
+        //Profile display
+        ListItem.Standard {
+            id: profile
+            interactive: false
+            showDivider: true
+            Icon {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Units.dp(20)
+                name: "awesome/globe"
+                size: Units.dp(24)
+            }
+            content: Column{
+                anchors.centerIn: parent
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Profile"
+                    font.family: "Roboto"
+                    font.weight: Font.Bold
+                    font.pixelSize: Units.dp(10)
+                }
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "UDP " + OvpnController.port
+                    style: "title"
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: serverDialog
+        width: Units.dp(300)
+        title: "Servers"
+        hasActions: true
+        positiveButtonText: "Select Server"
+        negativeButtonText: "Cancel"
+
+        MenuField {
+            id: comboServers
+            width: Units.dp(200)
+            model: comboModel
+        }
+
+/*            ListItem.Standard {
+            text: "United Kingdom"
+            action: CircleImage {
+                anchors.fill: parent
+                source: Qt.resolvedUrl("/flags/flags/GB.png")
+            }
+        }*/
+
+        onAccepted: {
+            console.log(servers[comboServers.selectedIndex].address)
+            OvpnController.setServer(servers[comboServers.selectedIndex].address)
+            OvpnController.setServerName(servers[comboServers.selectedIndex].name)
+            OvpnController.setServerLoad(servers[comboServers.selectedIndex].load)
+        }
+    }
+
+    Dialog {
+        id: loginDialog
+        width: Units.dp(300)
+        title: "Login"
+        hasActions: true
+        positiveButtonText: "Login"
+        negativeButtonText: "Cancel"
+
+        TextField {
+            id: usernameField
+            placeholderText: "Username"
+            floatingLabel: true
             anchors.horizontalCenter: parent.horizontalCenter
-            height: (24 * Theme.fontSizeTiny) + (2 * Theme.paddingLarge)
-            width: parent.width - 2 * Theme.paddingLarge
-            x: Theme.paddingLarge
+        }
 
-            //TextEdit {
-            Label {
-                id: logOutput
-                textFormat: Text.PlainText
-                width: parent.width - 2 * Theme.paddingSmall
-                height: parent.height - 0 * Theme.paddingSmall
-                wrapMode: Text.WrapAnywhere
-                font.pixelSize: Theme.fontSizeTiny * 0.6
-                font.family: "Monospace"
-                color: Theme.highlightColor
-                visible: true
-                text: OvpnController.logText
-                verticalAlignment: Text.AlignBottom
-                x: Theme.paddingSmall
-                y: Theme.paddingSmall
-                //readOnly: true
-                clip: true
+        TextField {
+            id: passwordField
+            placeholderText: "Password"
+            floatingLabel: true
+            echoMode: TextInput.Password
+            helperText: "Enter the password."
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        CheckBox{
+            text: "Remember Me"
+            checked: OvpnController.rememberLogin
+
+            onClicked:{
+                console.log("remember me clicked")
+                OvpnController.rememberLogin = checked
             }
         }
+
+        onAccepted: {
+            console.log("in onAccepted: " + usernameField.length + " " + passwordField.length)
+            if (usernameField.length > 0 && passwordField.length > 0){
+                OvpnController.setUserName(usernameField.getText(0, usernameField.length))
+                OvpnController.setUserPass(passwordField.getText(0, passwordField.length))
+                loginState = 1
+            }
+            else
+                loginState = 0
+        }
+
+        onRejected: {
+            loginState = 0
+        }
+    }
+
+
+    Component.onCompleted: {
+        if (!mainWindow.getServers()){
+            if (!mainWindow.loadServerXml()){
+                console.log("Failed to get servers! TODO: Retry server retrieval")
+            }
+        }
+
+        //Attempt Auto-Connect
+        autoConnect()
     }
 }

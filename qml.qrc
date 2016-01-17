@@ -2,6 +2,9 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>ConnectPage.qml</file>
-        <file>ServersPage.qml</file>
+        <file>SettingsPage.qml</file>
+    </qresource>
+    <qresource prefix="/flags">
+        <file>flags/GB.png</file>
     </qresource>
 </RCC>

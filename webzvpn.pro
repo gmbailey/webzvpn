@@ -36,9 +36,14 @@ SOURCES += main.cpp \
     common.cpp \
     ovpncontroller.cpp \
     filehandler.cpp \
-    serverhandler.cpp
+    serverhandler.cpp \
+    stun.cpp \
+    thread_oldip.cpp \
+    ministun.c \
+    ovmanager.cpp
 
-RESOURCES += qml.qrc
+RESOURCES += \
+    qml.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -54,6 +59,11 @@ HEADERS += \
     filehandler.h \
     serverhandler.h \
     serverinfo.h \
-    ovpncontroller.h
+    ovpncontroller.h \
+    ministun.h \
+    stun.h \
+    thread_oldip.h \
+    ovmanager.h \
+    version.h
 
 DISTFILES +=

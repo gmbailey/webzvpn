@@ -45,28 +45,23 @@ bool OpenUrl(const char * url)
 
 bool OpenUrl_Support()
 {
-    return OpenUrl("https://proxy.sh/support");
+    return OpenUrl("https://webzvpn.ru");
 }
 
 bool OpenUrl_Panel()
 {
-    return OpenUrl("https://proxy.sh/panel");
+    return OpenUrl("https://webzvpn.ru");
 }
 
-bool OpenUrl_Earn()
-{
-    return OpenUrl("https://proxy.sh/money");
-}
 
 bool OpenUrl_Bug()
 {
-    return OpenUrl("https://proxy.sh/panel/knowledgebase/27/Troubleshooting");
-    //https://proxy.sh/panel/submitticket.php
+    return OpenUrl("https://webzvpn.ru");
 }
 
 bool OpenUrl_Update()
 {
-    return OpenUrl("https://proxy.sh/software");
+    return OpenUrl("https://webzvpn.ru");
 }
 
 // maybe empty str >>> false
@@ -86,7 +81,7 @@ const QString & GetSettingsFn()
 {
     if (m_sSettingsFile.isEmpty())
         m_sSettingsFile = //QApplication::applicationDirPath().left(1) +
-                ":/Safejumper-settings.ini";
+                ":/webzvpn-settings.ini";
     return m_sSettingsFile;
 }
 
