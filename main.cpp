@@ -19,6 +19,8 @@
 #include "ovpncontroller.h"
 #include <QDebug>
 
+#include <memory>
+
 int main(int argc, char *argv[]){
     // Register class to QML
     qmlRegisterType<FileHandler>("FileHandler", 1, 0, "FileHandler");
@@ -43,16 +45,20 @@ int main(int argc, char *argv[]){
 
     QQmlApplicationEngine engine;
 
-    OvpnController * ovpnControl = new OvpnController();
+    std::auto_ptr<OvpnController> ovpnControl; //= new OvpnController();
     FileHandler * fileHandler = new FileHandler();
     ServerHandler * servHandler = new ServerHandler();
+    ovpnControl.reset(new OvpnController);
 
-    engine.rootContext()->setContextProperty("OvpnController", ovpnControl);
+    engine.rootContext()->setContextProperty("OvpnController", ovpnControl.get());
     engine.rootContext()->setContextProperty("FileHandler", fileHandler);
     engine.rootContext()->setContextProperty("ServerHandler", servHandler);
+    engine.addImportPath("qml-material/modules/");
+
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     QQuickWindow* window = qobject_cast<QQuickWindow*>(engine.rootObjects().at(0));
+
     window->show();
     return app.exec();
 }

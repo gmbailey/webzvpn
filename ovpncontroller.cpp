@@ -1,5 +1,6 @@
 #include "ovpncontroller.h"
 #include "version.h"
+#include <QDateTime>
 
 OvpnController::OvpnController(QObject *parent) :
     QObject(parent),
@@ -13,6 +14,10 @@ OvpnController::OvpnController(QObject *parent) :
     default_dns[1] = "192.241.172.159";
 
     loadSettings();
+}
+
+OvpnController::~OvpnController(){
+
 }
 
 QString OvpnController::getLogText() const{
@@ -96,7 +101,6 @@ void OvpnController::findOldIp(){
 
 void OvpnController::processOldIp(QString ip){
     oldIp = ip;
-    qDebug() << "old ip: " << oldIp;
     delete _th_oldip.release();
 }
 
@@ -136,6 +140,7 @@ void OvpnController::startConn(){
     catch(std::exception & ex)
     {
         log::logt(ex.what());
+
       //  if (IsDisableIPv6())
       //  {
             return;
@@ -160,11 +165,6 @@ void OvpnController::startConn(){
         delete soc.release();
     }
 
-//    attachMgmt();
-
-//    process = new QProcess();
-//    QString program = PathHelper::Instance()->OpenvpnPathfilename();
-//    getArgs();
 
     QFile ff(PathHelper::Instance()->OpenvpnConfigPfn());
     if (ff.open(QIODevice::WriteOnly)){
@@ -232,8 +232,10 @@ void OvpnController::startConn(){
     QString program = PathHelper::Instance()->OpenvpnPathfilename();
 
     log::logt("Prog is: " + program);
+    logAppend("Prog is: " + program);
     QString params = args.join(' ');
     log::logt("Args are:" + params);
+    logAppend("Args are:" + params);
 
     bool ok = false;
     try{
@@ -271,7 +273,7 @@ void OvpnController::startConn(){
         process->start(program, args);
         process->waitForStarted(2000);
         log::logt("Process ID is: " + QString::number(process->processId()));
-//        logAppend("Process ID is: " + QString::number(process->processId()));
+        logAppend("Process ID is: " + QString::number(process->processId()));
 //        emit logTxtChanged(logText);
 #endif
         ok = true;
@@ -492,17 +494,20 @@ void OvpnController::setLogText(const QString &value){
 
 void OvpnController::logAppend(const QString &text){
     if (!text.isEmpty()) {
-        QString append = text;
+
+        QDateTime now = QDateTime::currentDateTimeUtc();
+
+        QString append = now.toString("yyyy-MM-dd-HH-mm-ss ") + text;
 
         // Ensure we end with a newline
         if (!append.endsWith('\n')) {
             append += '\n';
         }
-
+/*
         // How many lines to add
         int newLines = append.count('\n');
         int currentLines = logText.count('\n');
-        int removeLines = currentLines + newLines - 24;
+ //       int removeLines = currentLines + newLines - 24;
 
         // Remove excess lines from the top
         while (removeLines > 0) {
@@ -512,9 +517,10 @@ void OvpnController::logAppend(const QString &text){
             }
             removeLines--;
         }
-
+*/
         // Add new lines
         logText.append(append);
+  //      qDebug() << append;
 
         emit logTxtChanged(logText);
     }
@@ -551,6 +557,7 @@ void OvpnController::logFileChanged(const QString &pfn){
 
 void OvpnController::killRunningOvpn(){
     log::logt(QString("KillRunningOV() enter"));
+    logAppend("KillRunningOV() enter");
         if (isOvRunning()){
             attachMgmt();
             if (soc.get())
@@ -570,11 +577,13 @@ void OvpnController::killRunningOvpn(){
                     }
                     catch(std::exception & ex){
                         log::logt(ex.what());
+                        logAppend(ex.what());
                     }
                 }
             }
         }
         log::logt(QString("KillRunningOV() exit"));
+        logAppend("KillRunningOV() exit");
 }
 
 void OvpnController::setUserName(const QString &value){
@@ -715,7 +724,6 @@ void OvpnController::setIp(const QString &value){
         newIp = value;
         settingsSetValue("newIp", value);
         emit ipChanged(newIp);
-        qDebug() << "setIp called: " << newIp;
     }
 
 }
@@ -725,7 +733,6 @@ void OvpnController::timer_CheckState(){
 }
 
 void OvpnController::attachMgmt(){
-    qDebug() << "attachMgmt";
     if (NULL != soc.get()){
         disconnect(soc.get(), SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(soc_err(QAbstractSocket::SocketError)));
         disconnect(soc.get(), SIGNAL(readyRead()), this, SLOT(soc_readyRead()));
@@ -751,7 +758,7 @@ void OvpnController::initWatcher(){
             _watcher->addPath(PathHelper::Instance()->OpenvpnLogPfn());
 
             log::logt("Monitoring " + PathHelper::Instance()->OpenvpnLogPfn());
- //           logAppend("Monitoring " + PathHelper::Instance()->OpenvpnLogPfn());
+            logAppend("Monitoring " + PathHelper::Instance()->OpenvpnLogPfn());
             connect(_watcher.get(), SIGNAL(fileChanged(const QString &)), this, SLOT(logFileChanged(const QString &)));
         }
     }
@@ -809,17 +816,14 @@ void OvpnController::gotConnected(const QString &s){
     setState(OVSTATE_CONNECTED);
     // extract IP
     //1432176303,CONNECTED,SUCCESS,10.14.0.6,91.219.237.159
-    qDebug() << "gotConnected: started";
     int p = -1;
     for (int k = 0; k < 4; ++k)
         p = s.indexOf(',', p + 1);
     if (p > -1){
-        qDebug() << "gotConnected: if (p > -1)";
         QString ip = s.mid(p + 1);
         setIp(ip);
     }
 
-    //AuthManager::Instance()->ForwardPorts();
 }
 
 void OvpnController::gotTunErr(const QString &s){
@@ -888,11 +892,10 @@ void OvpnController::processLine(QString s){
 }
 
 void OvpnController::processRtWord(const QString &word, const QString &s){
-    qDebug() << "processRTWord";
     log::logt(s);
-//    logAppend(s);
+    logAppend(s);
     log::logt("processing RT word '" + word + "'");
-//    logAppend("processing RT word '" + word + "'");
+    logAppend("processing RT word '" + word + "'");
 
     if (word.compare("INFO", Qt::CaseInsensitive) == 0) {
         // INFO:
@@ -901,8 +904,10 @@ void OvpnController::processRtWord(const QString &word, const QString &s){
         if (s.indexOf("hold release") > -1)
         {
             log::logt("hold off");
+            logAppend("hold off");
             soc->write("hold off\n");
             log::logt("hold release");
+            logAppend("hold release");
             soc->write("hold release\n");
             soc->flush();
         }
@@ -910,6 +915,7 @@ void OvpnController::processRtWord(const QString &word, const QString &s){
         if (s.indexOf("Need 'Auth' username/password") > -1){
             qDebug() << "password";
             log::logt("sending vpn login+password");
+            logAppend("sending vpn login+password");
             QString u1 = "username \"Auth\" \"" + EscapePsw(userName) + "\"\n";
             QString p1 = "password \"Auth\" \"" + EscapePsw(userPass) + "\"\n";
             qDebug() << "user: " << u1 << " , pass: " << p1;
@@ -941,9 +947,9 @@ void OvpnController::processPlainWord(const QString &word, const QString &s){
         ;
     } else {
         log::logt(s);
-//        logAppend(s);
+        logAppend(s);
         log::logt("processing plain word '" + word + "'");
-//        logAppend("processing plain word '" + word + "'");
+        logAppend("processing plain word '" + word + "'");
         if (word.compare("SUCCESS", Qt::CaseInsensitive) == 0) {
         ;
     } else { if (word.compare("ERROR", Qt::CaseInsensitive) == 0) {
@@ -955,9 +961,9 @@ void OvpnController::processStateWord(const QString &word, const QString &s){
     bool isnew = false;
     if (word != _prev_st_word){
         log::logt(s);
-//        logAppend(s);
+        logAppend(s);
         log::logt("processing state word '" + word + "'");
-//        logAppend("processing state word '" + word + "'");
+        logAppend("processing state word '" + word + "'");
         isnew = true;
     }
     if (word.compare("CONNECTED", Qt::CaseInsensitive) == 0) {
@@ -982,7 +988,7 @@ void OvpnController::showErrMsgAndCleanup(QString msg){
     delete soc.release();
     delete process.release();
 
-    setState(OVSTATE_DISCONNECTED);
+    setState(OVSTATE_AUTHFAILED);
 }
 
 void OvpnController::setState(OvpnState newState){
@@ -1125,9 +1131,9 @@ void OvpnController::loadSettings(){
     // Read configuration settings
 
     server = settings.value("server", "").toString();
-    port = settings.value("port", 5005).toInt();
+    port = settings.value("port", 50005).toInt();
     serverLoad = settings.value("serverLoad", "").toString();
-    compressed = settings.value("compressed", true).toBool();
+
     caCertFile = settings.value("caCertFile", "").toString();
     configFile = settings.value("configFile", "").toString();
     rememberLogin = settings.value("rememberLogin", true).toBool();
@@ -1139,12 +1145,9 @@ void OvpnController::loadSettings(){
 
     serverName = settings.value("serverName", "").toString();
 
-    qDebug() << "serverName: " << serverName;
-    qDebug() << "user/pass: " << userName << " " << userPass;
-
-    autoStart = settings.value("autoStart", true).toBool();
-    autoConnect = settings.value("autoConnect", true).toBool();
-    autoReconnect = settings.value("autoReconnect", true).toBool();
+    autoStart = settings.value("autoStart", false).toBool();
+    autoConnect = settings.value("autoConnect", false).toBool();
+    autoReconnect = settings.value("autoReconnect", false).toBool();
 
     curVersion = QString::number(WEBZ_MAJOR) + "." + QString::number(WEBZ_MINOR);
 }

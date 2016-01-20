@@ -1,6 +1,9 @@
 import QtQuick 2.5
 import Material 0.2
 
+import Material.Extras 0.1
+import QtQuick.Controls 1.4 as QTControls
+
 ApplicationWindow{
 
     title: "webzvpn"
@@ -12,6 +15,7 @@ ApplicationWindow{
 
     visible: true
 
+
     theme {
         primaryColor: Palette.colors["blue"]["500"]
         primaryDarkColor: Palette.colors["blue"]["700"]
@@ -20,7 +24,6 @@ ApplicationWindow{
     }
 
     ListModel { id: comboModel }
-
 
     property string pageResp
     property string xmlResp
@@ -39,10 +42,15 @@ ApplicationWindow{
         for (var k = 0; k < servers.length; k++){
             comboModel.append({"name": servers[k].name})
         }
-        if (servers.length > 0)
+
+        if (servers.length > 0){
+            console.log("returning true")
             return true
-        else
+        }
+        else{
+            console.log("returning false")
             return false
+        }
     }
 
     function loadServerXml(){
@@ -53,13 +61,18 @@ ApplicationWindow{
 
     function getServers(url) {
         var doc = new XMLHttpRequest();
-        doc.open("GET", url);
+
         doc.onreadystatechange = function() {
             if (doc.readyState === XMLHttpRequest.DONE) {
                 if (doc.responseText.length > 0){
-                    if (doc.responseText.match("!!!:::(.*)==!!!").length > 1){
-                        pageResp = doc.responseText.match("!!!:::(.*)==!!!")[1]
+                    if (doc.responseText.match("!!!:::(.*)=!!!").length > 1){
+                        console.log("length > 1")
+                        pageResp = doc.responseText.match("!!!:::(.*)=!!!")[1]
                         pageResp = Qt.atob(pageResp)
+                        ServerHandler.setupServerList(pageResp)
+                        setupServComboBox()
+                        if (servers.length === 0)
+                            loadServerXml()
                     }
                 }
                 else {
@@ -67,23 +80,14 @@ ApplicationWindow{
                 }
             }
         }
-        doc.setRequestHeader("Content-Encoding", "UTF-8");
+//        doc.setRequestHeader("Content-Encoding", "UTF-8");
+        doc.open("GET", url);
         doc.send();
 
-        ServerHandler.setupServerList(xmlResp)
-        return setupServComboBox()
     }
 
     signal connectPressed()
     signal serverSelected()
-
-    onConnectPressed:{
-        pageStack.pop(1)
-    }
-
-    onServerSelected:{
-        pageStack.pop(1)
-    }
 
     initialPage: TabbedPage {
         title: "webzvpn"
@@ -97,70 +101,11 @@ ApplicationWindow{
             title: "Settings"
             source: Qt.resolvedUrl("SettingsPage.qml")
         }
-    }
-/*
-    Component {
-        id: tabDelegate
-        Flickable {
-            id: flickable
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                bottom: parent.bottom
-            }
-            clip: true
-            contentHeight: Math.max(mainWindow.implicitHeight + 40, height)
-            Loader {
-                id: example
-                anchors.fill: parent
-                asynchronous: true
-                visible: status == Loader.Ready
-                source: {
-                    return Qt.resolvedUrl("ConnectPage.qml")
-                }
-            }
-
-            ProgressCircle {
-                anchors.centerIn: parent
-                visible: example.status == Loader.Loading
-            }
+        Tab {
+            title: "Log"
+            source:  Qt.resolvedUrl("LogPage.qml")
         }
     }
 
-    Component {
-        id: tabDelegate2
-        Flickable {
-            id: flickable
 
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                bottom: parent.bottom
-            }
-            clip: true
-            contentHeight: Math.max(mainWindow.implicitHeight + 40, height)
-            Loader {
-                id: example2
-                anchors.fill: parent
-                asynchronous: true
-                visible: status == Loader.Ready
-                source: {
-                    return Qt.resolvedUrl("SettingsPage.qml")
-
-                }
-            }
-
-            ProgressCircle {
-                anchors.centerIn: parent
-                visible: example2.status == Loader.Loading
-            }
-        }
-    }
-
-    Component.onCompleted: {
-
-    }
-*/
 }

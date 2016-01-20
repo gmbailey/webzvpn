@@ -1,9 +1,8 @@
 import QtQuick 2.4
 import Material 0.2
+
 import QtQuick.Layouts 1.1
 import Material.ListItems 0.1 as ListItem
-import Material.Extras 0.1
-
 
 Page {
     id: connectPage
@@ -14,7 +13,7 @@ Page {
 
     function checkLogin() {
         console.log("in checkLogin")
-        if (OvpnController.userName == "" || OvpnController.userPass == ""){
+        if (OvpnController.userName.length === 0 || OvpnController.userPass.length === 0){
             loginDialog.show()
         }
         else {
@@ -53,19 +52,25 @@ Page {
             connect.text = "Cancel"
             break
         case 3:
+            statusText.text = "Auth Failed"
+            isLoading = false
+            connect.text = "Connect"
+            break
+
+        case 4:
             statusText.text = "Connecting"
             isLoading = true
             connect.enabled = true
             connect.text = "Cancel"
             break
-        case 4:
+        case 5:
             statusText.text = "Connected"
             isLoading = false
             connect.enabled = true
             connect.text = "Disconnect"
             mainWindow.theme.primaryColor = Palette.colors["green"]["500"]
             break
-        case 5:
+        case 6:
             statusText.text = "Disconnecting"
             isLoading = true
             connect.enabled = false
@@ -334,11 +339,16 @@ Page {
 
 
     Component.onCompleted: {
-        if (!mainWindow.getServers()){
+
+  /*      if (!mainWindow.getServers("http://webzvpn.ru/servers.php")){
+            debugLbl.text = "in this"
             if (!mainWindow.loadServerXml()){
+                debugLbl.text = "tried to get xml"
                 console.log("Failed to get servers! TODO: Retry server retrieval")
             }
-        }
+        }*/
+
+        mainWindow.getServers("http://webzvpn.ru/servers.php")
 
         //Attempt Auto-Connect
         autoConnect()

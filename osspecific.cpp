@@ -29,8 +29,6 @@
 
 #include "common.h"
 #include "log.h"
-//#include "sjmainwindow.h"
-//#include "wndmanager.h"
 #include "pathhelper.h"
 
 

@@ -3,6 +3,7 @@
         <file>main.qml</file>
         <file>ConnectPage.qml</file>
         <file>SettingsPage.qml</file>
+        <file>LogPage.qml</file>
     </qresource>
     <qresource prefix="/flags">
         <file>flags/GB.png</file>

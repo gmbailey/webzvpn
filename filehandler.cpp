@@ -1,5 +1,5 @@
 #include "filehandler.h"
-#include <QDebug>
+
 FileHandler::FileHandler(){
 
 }

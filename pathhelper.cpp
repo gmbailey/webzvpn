@@ -4,8 +4,6 @@
 #include <QApplication>
 #include <QProcess>
 
-//#include "log.h"	// TODO: -0 remove
-
 extern QApplication * g_pTheApp;
 
 std::auto_ptr<PathHelper> PathHelper::_inst;

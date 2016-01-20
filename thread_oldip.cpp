@@ -2,10 +2,8 @@
 #include "stun.h"
 
 void Thread_OldIp::run(){
-    qDebug() << "Thread_OldIp::run()";
     QString ip;
     uint64_t v = OvManager::Instance()->getRnd64();
-    qDebug() << "getRnd64() :  " << v;
 	sockaddr_in sa;
 	const char * sv;
 

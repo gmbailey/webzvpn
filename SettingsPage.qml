@@ -3,6 +3,7 @@ import QtQuick.Layouts 1.1
 import Material 0.2
 import Material.ListItems 0.1 as ListItem
 import Material.Extras 0.1
+import QtQuick.Controls 1.4 as QTControls
 
 Item {
     property var profileModel: ["UDP 50005"]
@@ -13,6 +14,7 @@ Item {
         autoConnectSwitch.checked = OvpnController.autoConnect
     }
 
+    property string test: "test test \n test"
 
     View {
         anchors {
@@ -182,6 +184,10 @@ Item {
                 elevation: 1
                 text: "Show Logs"
                 implicitHeight: Units.dp(25)
+
+                onClicked:{
+                   logDialog.show()
+                }
             }
 
 
@@ -230,6 +236,19 @@ Item {
                 OvpnController.setUserName(usernameField.getText(0, usernameField.length))
                 OvpnController.setUserPass(passwordField.getText(0, passwordField.length))
             }
+        }
+    }
+
+    Dialog {
+        id: logDialog
+        title: "Logs"
+        height: Units.dp(450)
+
+        QTControls.TextArea{
+            id: logField
+            readOnly: true
+            text: test
+            width: parent.width
         }
     }
 

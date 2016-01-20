@@ -17,13 +17,14 @@
 #include "osspecific.h"
 #include "common.h"
 #include <QTimer>
-#include <thread_oldip.h>
+#include "thread_oldip.h"
 
 enum OvpnState {
     OVSTATE_DISCONNECTED = 0,
 
     OVSTATE_STARTING,
     OVSTATE_AUTHORIZING,
+    OVSTATE_AUTHFAILED,
     OVSTATE_CONNECTING,
     OVSTATE_CONNECTED,
     OVSTATE_DISCONNECTING,
@@ -57,6 +58,7 @@ class OvpnController : public QObject
 
 public:
     explicit OvpnController(QObject *parent = 0);
+    ~OvpnController();
 
     QString getLogText() const;
 

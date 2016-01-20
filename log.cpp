@@ -1,6 +1,5 @@
 #include "log.h"
 
-
 #ifndef NDEBUG
 #include <QtDebug>
 #endif
