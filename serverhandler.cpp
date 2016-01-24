@@ -1,5 +1,6 @@
 #include "serverhandler.h"
 #include <QDebug>
+#include "flag.h"
 
 ServerHandler::ServerHandler(QObject *parent) : QObject(parent){
 
@@ -32,11 +33,15 @@ void ServerHandler::setupServerList(const QString &value){
                 continue;
             ServerInfo *serv = new ServerInfo();
             serv->setAddress(adr.text());
-            qDebug() << serv->address();
+
             serv->setName(loc.text());
-            qDebug() << serv->name();
+
             serv->setLoad(load.text());
-            qDebug() << serv->load();
+
+            QString fl = flag::IconFromSrvName(loc.text());
+            qDebug() << "Flag : " << fl;
+
+            serv->setFlag(fl);
             m_servers.push_back(serv);
         }
     }

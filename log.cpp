@@ -7,6 +7,7 @@
 #include <QDateTime>
 
 #include "pathhelper.h"
+#include "ovpncontroller.h"
 
 void log::logt(const QString & s)
 {
@@ -24,8 +25,15 @@ void log::logt(const QString & s)
         ff.close();
     }
 
-//    Scr_Logs::Instance()->Log(s1);
+//    logText = s1;
+
+ //   emit logUpdated(logText);
 }
+
+/*void log::setLogText(const QString &value){
+ //   logText = value;
+    emit logUpdated(logText);
+}*/
 
 
 

@@ -58,6 +58,14 @@ int main(int argc, char *argv[]){
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     QQuickWindow* window = qobject_cast<QQuickWindow*>(engine.rootObjects().at(0));
+/*    window->setMinimumWidth(400);
+    window->setMinimumHeight(500);
+    window->setHeight(500);
+    window->setWidth(400);
+    window->setMaximumHeight(500);
+    window->setMaximumWidth(400);*/
+ //   window->setFlags(Qt::MSWindowsFixedSizeDialogHint);
+ //   Qt::WindowFlags flags = Qt::Window; flags |= Qt::MSWindowsFixedSizeDialogHint;
 
     window->show();
     return app.exec();

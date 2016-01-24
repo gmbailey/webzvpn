@@ -39,7 +39,8 @@ SOURCES += main.cpp \
     stun.cpp \
     thread_oldip.cpp \
     ministun.c \
-    ovmanager.cpp
+    ovmanager.cpp \
+    flag.cpp
 
 RESOURCES += \
     qml.qrc
@@ -66,6 +67,8 @@ HEADERS += \
     stun.h \
     thread_oldip.h \
     ovmanager.h \
-    version.h
+    version.h \
+    flag.h
 
-DISTFILES +=
+DISTFILES += \
+    webzvpn.exe.manifest

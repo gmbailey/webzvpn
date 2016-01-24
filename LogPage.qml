@@ -3,6 +3,15 @@ import QtQuick.Controls 1.4 as QTControls
 import Material 0.2
 
 Item {
+    property string logLine
+
+    Connections {
+        target:OvpnController
+        onLogTxtChanged: {
+            logField.append(logTxt)
+        }
+    }
+
     View {
         anchors {
             fill: parent

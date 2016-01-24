@@ -1,25 +1,24 @@
 import QtQuick 2.5
 import Material 0.2
-
 import Material.Extras 0.1
-import QtQuick.Controls 1.4 as QTControls
 
 ApplicationWindow{
 
     title: "webzvpn"
     id: mainWindow
-    minimumHeight: 620
-    minimumWidth: 400
+    minimumHeight: Units.dp(430)
+    minimumWidth: Units.dp(400)
     maximumHeight: minimumHeight
     maximumWidth: minimumWidth
 
-    visible: true
 
+    visible: true
 
     theme {
         primaryColor: Palette.colors["blue"]["500"]
         primaryDarkColor: Palette.colors["blue"]["700"]
-        accentColor: Palette.colors["red"]["A200"]
+        accentColor: Palette.colors["lightBlue"]["500"]
+
         tabHighlightColor: "white"
     }
 
@@ -28,6 +27,9 @@ ApplicationWindow{
     property string pageResp
     property string xmlResp
     property var servers: []
+
+    property var sectionComponents: [ "ConnectPage", "SettingsPage", "LogPage" ]
+    property var sectionTitles: [ "Status", "Settings", "Log" ]
 
     Connections {
         target: FileHandler
@@ -69,6 +71,7 @@ ApplicationWindow{
                         console.log("length > 1")
                         pageResp = doc.responseText.match("!!!:::(.*)=!!!")[1]
                         pageResp = Qt.atob(pageResp)
+                        FileHandler.save(pageResp, "servers.xml")
                         ServerHandler.setupServerList(pageResp)
                         setupServComboBox()
                         if (servers.length === 0)
@@ -90,11 +93,11 @@ ApplicationWindow{
     signal serverSelected()
 
     initialPage: TabbedPage {
+        id: tabbed
         title: "webzvpn"
-        Tab {
+        /*Tab {
             title: "Status"
-            source:Qt.resolvedUrl("ConnectPage.qml")
-
+            source:Qt.resolvedUrl("qrc:/ConnectPage.qml")
         }
 
         Tab {
@@ -104,8 +107,16 @@ ApplicationWindow{
         Tab {
             title: "Log"
             source:  Qt.resolvedUrl("LogPage.qml")
+        }*/
+
+        Repeater {
+            model: sectionComponents
+
+            delegate: Tab {
+                title: sectionTitles[index]
+                asynchronous: true
+                source: Qt.resolvedUrl("%.qml").arg(modelData)
+            }
         }
     }
-
-
 }

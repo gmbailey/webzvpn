@@ -14,8 +14,6 @@ Item {
         autoConnectSwitch.checked = OvpnController.autoConnect
     }
 
-    property string test: "test test \n test"
-
     View {
         anchors {
             fill: parent
@@ -34,7 +32,7 @@ Item {
                 Layout.alignment: Qt.AlignLeft
 
                 text: "Updates:"
-                font.pixelSize: Units.dp(10)
+                font.pixelSize: Units.dp(14)
             }
 
             Label {
@@ -50,7 +48,7 @@ Item {
             Button {
                 Layout.leftMargin: Units.dp(10)
                 id: updateButton
-                backgroundColor: Palette.colors["blue"]["700"]
+                backgroundColor: Theme.backgroundColor
                 elevation: 1
                 text: "Update"
                 implicitHeight: Units.dp(25)
@@ -63,12 +61,12 @@ Item {
             Label {
                 Layout.leftMargin: Units.dp(5)
                 text: "Login Info:"
-                font.pixelSize: Units.dp(10)
+                font.pixelSize: Units.dp(14)
             }
 
             Button {
                 Layout.leftMargin: Units.dp(10)
-                backgroundColor: Palette.colors["blue"]["700"]
+                backgroundColor: Theme.backgroundColor
                 elevation: 1
                 text: "Change"
                 implicitHeight: Units.dp(25)
@@ -84,7 +82,7 @@ Item {
             Label {
                 Layout.leftMargin: Units.dp(5)
                 text: "Profiles:"
-                font.pixelSize: Units.dp(10)
+                font.pixelSize: Units.dp(14)
             }
 
 
@@ -168,32 +166,10 @@ Item {
                 Layout.fillWidth: parent
             }
 
-            Label {
-                Layout.leftMargin: Units.dp(5)
-                text: "Logs:"
-                font.pixelSize: Units.dp(10)
-            }
 
-            Item {
-                Layout.preferredHeight: Units.dp(3)
-            }
-
-            Button {
-                Layout.leftMargin: Units.dp(10)
-                backgroundColor: Palette.colors["blue"]["700"]
-                elevation: 1
-                text: "Show Logs"
-                implicitHeight: Units.dp(25)
-
-                onClicked:{
-                   logDialog.show()
-                }
-            }
-
-
-            Item{
+   /*         Item{
                 Layout.fillHeight: parent
-            }
+            }*/
         }
     }
 
@@ -205,11 +181,15 @@ Item {
         positiveButtonText: "Save"
         negativeButtonText: "Cancel"
 
+        ListItem.Standard{
+            height: Units.dp(10)
+        }
+
         TextField {
             id: usernameField
             placeholderText: "Username"
             floatingLabel: true
-            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width
         }
 
         TextField {
@@ -218,7 +198,7 @@ Item {
             floatingLabel: true
             echoMode: TextInput.Password
             helperText: "Enter the password."
-            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width
         }
 
         CheckBox{
@@ -239,18 +219,6 @@ Item {
         }
     }
 
-    Dialog {
-        id: logDialog
-        title: "Logs"
-        height: Units.dp(450)
-
-        QTControls.TextArea{
-            id: logField
-            readOnly: true
-            text: test
-            width: parent.width
-        }
-    }
 
     Component.onCompleted: {
         restoreSettings()
