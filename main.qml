@@ -6,11 +6,13 @@ ApplicationWindow{
 
     title: "webzvpn"
     id: mainWindow
-    minimumHeight: Units.dp(430)
+    minimumHeight: Units.dp(630)
     minimumWidth: Units.dp(400)
     maximumHeight: minimumHeight
     maximumWidth: minimumWidth
 
+    //C++ Binding
+    signal servButtonPressed()
 
     visible: true
 
@@ -47,12 +49,13 @@ ApplicationWindow{
 
         if (servers.length > 0){
             console.log("returning true")
+            ServerHandler.changeState(0)
             return true
         }
         else{
             console.log("returning false")
             return false
-        }
+        }    
     }
 
     function loadServerXml(){
@@ -115,8 +118,15 @@ ApplicationWindow{
             delegate: Tab {
                 title: sectionTitles[index]
                 asynchronous: true
-                source: Qt.resolvedUrl("%.qml").arg(modelData)
+                sourceComponent: Component {// Qt.resolvedUrl("%.qml").arg(modelData)
+                    Loader {
+                        source: Qt.resolvedUrl("%.qml").arg(modelData)
+                        asynchronous: true
+                        //visible: status == Loader.Ready
+                    }
+                }
             }
         }
+
     }
 }

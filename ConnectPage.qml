@@ -6,8 +6,6 @@ import Material.ListItems 0.1 as ListItem
 import QtQuick.Controls 1.3 as QuickControls
 import Material.Extras 0.1
 
-import "qrc:/qml-material/modules/Material/Extras/js/promises.js" as Promises
-
 Page {
     id: connectPage
 
@@ -15,43 +13,6 @@ Page {
     property bool displayStatus: true
     property int loginState: -1             //0 login invalid, 1 login valid: credentials found
     property int serverIndex
-
-    function showServers() {
-            if (serverDialog.promise) {
-                serverDialog.promise.reject()
-                serverDialog.promise = null
-            }
-
-            serverDialog.promise = new Promises.Promise()
-            serverDialog.open()
-
-            return serverDialog.promise
-        }
-
-   /* function promiseTest(){
-        var promise = showServers()
-        console.log ("in promiseTest")
-        var myvalue = "";
-
-
-        //var promise = new Promises.Promse();
-        promise.info.myinfo = "cool info";
-        promise.then(function( data, info ) {
-            // send data to the next step
-            console.log("in here")
-
-            return info.myinfo + " " + test;
-        });
-
-        promise.done(function( data, info ) {
-            console.log(data + " " + info)
-            // do something with the data of resolve(...)
-        });
-
-        promise.error(function( error, info ) {
-            // do something with the data of reject(...)
-        });
-    }*/
 
     function findIndex(text){
         for(var i = 0; i < servers.length; i++){
@@ -147,8 +108,21 @@ Page {
             connectText.text = "Connect"
             Theme.primaryColor = Palette.colors["red"]["500"]
             Theme.primaryDarkColor = Palette.colors["red"]["700"]
-     //       mainWindow.theme.primaryColor = Palette.colors["red"]["500"]
-     //       mainWindow.theme.primaryDarkColor = Palette.colors["red"]["700"]
+            break
+        }
+    }
+
+    function serversRetrieval(curState) {
+        switch (curState) {
+        case 0: //DONE
+            serverDialog.show()
+            console.log("done")
+            break
+        case 1: //RETRIEVING
+            console.log("loading")
+            break
+        case 2: //PROCESSED
+            mainWindow.setupServComboBox()
             break
         }
     }
@@ -158,6 +132,14 @@ Page {
         onStateChanged: {
             console.log("status: " + ovState)
             updateStatus(ovState)
+        }
+    }
+
+    Connections {
+        target: ServerHandler
+        onStateChanged: {
+            console.log("state: " + curState)
+            serversRetrieval(curState)
         }
     }
 
@@ -184,13 +166,17 @@ Page {
                 onClicked: {
                     if (statusText.text == "Disconnected"){
                         //Check for selected server
-                        promiseTest()
-                        if (OvpnController.serverName === "")
-                            showServers()
+                        if (OvpnController.serverName === ""){
+                            if (mainWindow.servers.length > 0)
+                                serverDialog.show()
+                            else
+                                mainWindow.servButtonPressed()
+                        }
+
                         //    serverDialog.show()
 
                         //Check Login First
-                   //     checkLogin()
+                        checkLogin()
                         console.log("in connect: login = " + loginState)
 
                         if (loginState == 1)
@@ -237,7 +223,10 @@ Page {
                 }
 
                 onClicked: {
-                    serverDialog.show()
+                    if (mainWindow.servers.length > 0)
+                        serverDialog.show()
+                    else
+                        mainWindow.servButtonPressed()
                 }
             }
         }
@@ -382,8 +371,6 @@ Page {
         positiveButtonText: "Select Server"
         negativeButtonText: "Cancel"
 
-        property var promise
-
         QuickControls.ExclusiveGroup {
             id: optionGroup
         }
@@ -412,14 +399,12 @@ Page {
             OvpnController.setServer(servers[serverIndex].address)
             OvpnController.setServerName(servers[serverIndex].name)
             OvpnController.setServerLoad(servers[serverIndex].load)
-            promise.resolve()
-            promise = null
         }
 
         onRejected: {
-            promise.resolve()
-            promise = null
+
         }
+
     }
 
     Dialog {
@@ -429,8 +414,6 @@ Page {
         hasActions: true
         positiveButtonText: "Login"
         negativeButtonText: "Cancel"
-
-  //      property var promise
 
         ListItem.Standard{
             height: Units.dp(10)
@@ -473,21 +456,17 @@ Page {
             }
             else
                 loginState = 0
-
-     //       promise.resolve()
-     //       promise = null
         }
 
         onRejected: {
             loginState = 0
-    //        promise.resolve()
-    //        promise = null
         }
     }
 
-
     Component.onCompleted: {
-
+        /*
+          Server Retrieval will be done upon the click of the servers button. AutoConnect temporarily disabled
+        */
   /*      if (!mainWindow.getServers("http://webzvpn.ru/servers.php")){
             debugLbl.text = "in this"
             if (!mainWindow.loadServerXml()){
@@ -496,9 +475,9 @@ Page {
             }
         }*/
 
-        mainWindow.getServers("http://webzvpn.ru/servers.php")
+   //     mainWindow.getServers("http://webzvpn.ru/servers.php")
 
         //Attempt Auto-Connect
-        autoConnect()
+   //     autoConnect()
     }
 }

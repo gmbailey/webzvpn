@@ -27,23 +27,213 @@ Item {
             anchors.fill: parent
             spacing: Units.dp(2)
 
+            Item {
+                id: updateSection
+                width: parent.width
+                Layout.preferredHeight: Units.dp(105)
+                Layout.leftMargin: Units.dp(15)
+                Layout.topMargin: Units.dp(15)
+                Row {
+                    spacing: Units.dp(25)
+                    Icon {
+                        id: updIcn
+                        name: "device/access_alarm"
+                        size: Units.dp(16)
+                    }
+
+                    Column {
+                        width: Units.dp(125)
+                        height: parent.height
+                        Label {
+                            text: "Updates"
+                            font.pixelSize: Units.dp(12)
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        Label {
+                            text: "Current"
+                            color: Theme.light.textColor
+                            id: curLbl
+                        }
+                        Label {
+                            text: OvpnController.curVersion
+                            color: Theme.light.subTextColor
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        Button {
+                            id: updateButton
+                            backgroundColor: Theme.backgroundColor
+                            elevation: 1
+                            text: "Update"
+                            implicitHeight: Units.dp(25)
+
+                            onClicked: {
+                                OvpnController.launchUpdater()
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: Units.dp(125)
+                        height: parent.height
+                        Item{
+                            width: parent.width
+                            height: curLbl.height + Units.dp(15)
+                        }
+                        Label {
+                            text: "Latest"
+                            color: Theme.light.textColor
+                        }
+                        Label {
+                            text: "0.3"
+                            color: Theme.light.subTextColor
+                        }
+                    }
+                }
+            }
+
+            Item {
+                id: loginSection
+                width: parent.width
+                Layout.preferredHeight: Units.dp(105)
+                Layout.leftMargin: Units.dp(15)
+                Layout.topMargin: Units.dp(15)
+                Row {
+                    spacing: Units.dp(25)
+                    Icon {
+                        id: logIcn
+                        name: "device/access_alarm"
+                        size: Units.dp(16)
+                    }
+
+                    Column {
+                        width: Units.dp(125)
+                        height: parent.height
+                        Label {
+                            text: "Login Info"
+                            font.pixelSize: Units.dp(12)
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        Label {
+                            text: "Login"
+                            color: Theme.light.textColor
+                            id: loginLbl
+                        }
+                        Label {
+                            text: OvpnController.userName
+                            color: Theme.light.subTextColor
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        Button {
+                            id: loginButton
+                            backgroundColor: Theme.backgroundColor
+                            elevation: 1
+                            text: "Change"
+                            implicitHeight: Units.dp(25)
+                            onClicked:{
+                                changeLoginDialog.show()
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: Units.dp(125)
+                        height: parent.height
+                        Item{
+                            width: parent.width
+                            height: loginLbl.height + Units.dp(15)
+                        }
+                        Label {
+                            text: "Password"
+                            color: Theme.light.textColor
+                        }
+                        Label {
+                            text: "********"
+                            color: Theme.light.subTextColor
+                        }
+                    }
+                }
+            }
+
+            Item {
+                id: profileSection
+                width: parent.width
+                Layout.preferredHeight: Units.dp(105)
+                Layout.leftMargin: Units.dp(15)
+                Layout.topMargin: Units.dp(15)
+                Row {
+                    spacing: Units.dp(25)
+                    Icon {
+                        id: profileIcn
+                        name: "device/access_alarm"
+                        size: Units.dp(16)
+                    }
+
+                    Column {
+                        width: Units.dp(125)
+                        height: parent.height
+                        Label {
+                            text: "Profile"
+                            font.pixelSize: Units.dp(12)
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        ListItem.SimpleMenu {
+                            id: menuProfile
+                            text: profileModel[selectedIndex]
+                            model: profileModel
+                            implicitHeight: Units.dp(20)
+                        }
+                    }
+                }
+            }
+
+/*            Item{
+                height: Units.dp(8)
+            }
+
             Label {
                 Layout.leftMargin: Units.dp(5)
                 Layout.alignment: Qt.AlignLeft
-
                 text: "Updates:"
                 font.pixelSize: Units.dp(14)
+                color: Theme.light.textColor
             }
 
             Label {
                 Layout.leftMargin: Units.dp(10)
                 text: "Current Version: " + OvpnController.curVersion
                 font.pixelSize: Units.dp(12)
+                color: Theme.light.subTextColor
             }
             Label {
                 Layout.leftMargin: Units.dp(10)
                 text: "Latest Version: "
                 font.pixelSize: Units.dp(12)
+                color: Theme.light.subTextColor
             }
             Button {
                 Layout.leftMargin: Units.dp(10)
@@ -62,6 +252,7 @@ Item {
                 Layout.leftMargin: Units.dp(5)
                 text: "Login Info:"
                 font.pixelSize: Units.dp(14)
+                color: Theme.light.textColor
             }
 
             Button {
@@ -84,92 +275,115 @@ Item {
                 text: "Profiles:"
                 font.pixelSize: Units.dp(14)
             }
-
+*/
 
     /*        MenuField{
                 id: profileCombo
                 Layout.leftMargin: Units.dp(12)
                 Layout.preferredWidth: Units.dp(125)
-                model: ["UDP 5005"]
+                model: ["UDP 50005"]
             }*/
 
-
-            ListItem.SimpleMenu {
+     /*       ListItem.SimpleMenu {
                 id: menuProfile
                 text: profileModel[selectedIndex]
                 model: profileModel
                 implicitHeight: Units.dp(20)
             }
-
-            ListItem.Divider{
+*/
+   /*         ListItem.Divider{
                 Layout.fillWidth: parent
-            }
-
-            Column{
-                spacing: Units.dp(8)
-                Row {
-                    spacing: Units.dp(10)
-                    Switch {
-                        id: autoStartSwitch
-                        checked: true
-                        height: Units.dp(15)
-                        color: Palette.colors["blue"]["200"]
-                        onClicked: {
-                            console.log("autoLaunch : " + checked)
-                            OvpnController.autoStart = checked
-                        }
-                    }
-                    Label {
-                        id: autoLaunchLbl
-                        text: "Auto-launch app on startup"
-                    }
-                }
-
-                Row {
-                    spacing: Units.dp(10)
-                    Switch {
-                        id: autoConnectSwitch
-                        checked: true
-                        height: Units.dp(15)
-                        color: Palette.colors["blue"]["200"]
-                        onClicked: {
-                            console.log("reconnect : " + checked)
-                            OvpnController.autoConnect = checked
-                        }
-                    }
-                    Label {
-                        id: autoConnLbl
-                        text: "Auto-connect when app starts"
-                    }
-                }
-
-                Row {
-                    spacing: Units.dp(10)
-                    Switch {
-                        id: autoReconnectSwitch
-                        checked: true
-                        height: Units.dp(15)
-                        color: Palette.colors["blue"]["200"]
-                        onClicked: {
-                            console.log("autoConnect : " + checked)
-                            OvpnController.autoReconnect = checked
-                        }
-                    }
-                    Label {
-                        id: autoReconnLbl
-                        text: "Re-connect when connection drops"
-                    }
-                }
-            }
-
-            ListItem.Divider{
-                Layout.fillWidth: parent
-            }
-
-
-   /*         Item{
-                Layout.fillHeight: parent
             }*/
+
+            Item {
+                id: otherSection
+                width: parent.width
+                Layout.preferredHeight: Units.dp(105)
+                Layout.leftMargin: Units.dp(15)
+                Layout.topMargin: Units.dp(15)
+                Row {
+                    spacing: Units.dp(25)
+                    Icon {
+                        id: otherIcn
+                        name: "device/access_alarm"
+                        size: Units.dp(16)
+                    }
+                    Column{
+                        spacing: Units.dp(8)
+                        Label {
+                            text: "Other Settings"
+                            font.pixelSize: Units.dp(12)
+                        }
+
+                        Item{
+                            width: parent.width
+                            height: Units.dp(15)
+                        }
+
+                        Row {
+                            spacing: Units.dp(10)
+                            Switch {
+                                id: autoStartSwitch
+                                checked: true
+                                height: Units.dp(15)
+                                color: Palette.colors["blue"]["200"]
+                                onClicked: {
+                                    console.log("autoLaunch : " + checked)
+                                    OvpnController.autoStart = checked
+                                }
+                            }
+                            Label {
+                                id: autoLaunchLbl
+                                text: "Auto-launch app on startup"
+                                color: Theme.light.textColor
+                            }
+                        }
+
+                        Row {
+                            spacing: Units.dp(10)
+                            Switch {
+                                id: autoConnectSwitch
+                                checked: true
+                                height: Units.dp(15)
+                                color: Palette.colors["blue"]["200"]
+                                onClicked: {
+                                    console.log("reconnect : " + checked)
+                                    OvpnController.autoConnect = checked
+                                }
+                            }
+                            Label {
+                                id: autoConnLbl
+                                text: "Auto-connect when app starts"
+                                color: Theme.light.textColor
+                            }
+                        }
+
+                        Row {
+                            spacing: Units.dp(10)
+                            Switch {
+                                id: autoReconnectSwitch
+                                checked: true
+                                height: Units.dp(15)
+                                color: Palette.colors["blue"]["200"]
+                                onClicked: {
+                                    console.log("autoConnect : " + checked)
+                                    OvpnController.autoReconnect = checked
+                                }
+                            }
+                            Label {
+                                id: autoReconnLbl
+                                text: "Re-connect when connection drops"
+                                color: Theme.light.textColor
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            Item{
+                Layout.fillHeight: parent
+            }
         }
     }
 

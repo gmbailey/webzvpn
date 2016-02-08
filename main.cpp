@@ -53,19 +53,19 @@ int main(int argc, char *argv[]){
     engine.rootContext()->setContextProperty("OvpnController", ovpnControl.get());
     engine.rootContext()->setContextProperty("FileHandler", fileHandler);
     engine.rootContext()->setContextProperty("ServerHandler", servHandler);
+
+
     engine.addImportPath("qml-material/modules/");
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
+    QObject *item = engine.rootObjects().at(0);
+
+
+    QObject::connect(item, SIGNAL(servButtonPressed()),
+                     servHandler, SLOT(updateServers()));
+
     QQuickWindow* window = qobject_cast<QQuickWindow*>(engine.rootObjects().at(0));
-/*    window->setMinimumWidth(400);
-    window->setMinimumHeight(500);
-    window->setHeight(500);
-    window->setWidth(400);
-    window->setMaximumHeight(500);
-    window->setMaximumWidth(400);*/
- //   window->setFlags(Qt::MSWindowsFixedSizeDialogHint);
- //   Qt::WindowFlags flags = Qt::Window; flags |= Qt::MSWindowsFixedSizeDialogHint;
 
     window->show();
     return app.exec();

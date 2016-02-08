@@ -40,7 +40,8 @@ SOURCES += main.cpp \
     thread_oldip.cpp \
     ministun.c \
     ovmanager.cpp \
-    flag.cpp
+    flag.cpp \
+    updatelauncher.cpp
 
 RESOURCES += \
     qml.qrc
@@ -68,7 +69,8 @@ HEADERS += \
     thread_oldip.h \
     ovmanager.h \
     version.h \
-    flag.h
+    flag.h \
+    updatelauncher.h
 
 DISTFILES += \
     webzvpn.exe.manifest
