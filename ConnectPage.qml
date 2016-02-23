@@ -10,9 +10,11 @@ Page {
     id: connectPage
 
     property bool isLoading: false
+    property bool serverLoading: false
     property bool displayStatus: true
     property int loginState: -1             //0 login invalid, 1 login valid: credentials found
     property int serverIndex
+    property int controlStatus
 
     function findIndex(text){
         for(var i = 0; i < servers.length; i++){
@@ -109,20 +111,58 @@ Page {
             Theme.primaryColor = Palette.colors["red"]["500"]
             Theme.primaryDarkColor = Palette.colors["red"]["700"]
             break
+        case 12:
+            isLoading = true
+            connect.enabled = false
+            break
+        case 13:
+            loginDialog.show()
+            controlStatus = 1
+            break
+        case 14:
+            controlStatus = 2
+            if (mainWindow.servers.length > 0)
+                serverDialog.show()
+            else{
+                serverLoading = true
+                serverDialog.show()
+                mainWindow.servButtonPressed()
+            }
+            break
         }
+
     }
 
     function serversRetrieval(curState) {
         switch (curState) {
         case 0: //DONE
-            serverDialog.show()
+            serverLoading = false
             console.log("done")
+            serverDialog.show()
             break
         case 1: //RETRIEVING
             console.log("loading")
             break
         case 2: //PROCESSED
             mainWindow.setupServComboBox()
+            break
+        }
+    }
+
+    function versionRetrieval(curState) {
+        switch (curState) {
+        case 0: //LATEST
+            isLoading = false
+            console.log("latest version")
+            break
+        case 1: //CHECKING
+            isLoading = true
+            console.log("checking version")
+            break
+        case 2: //OUTDATED
+            console.log("out of date")
+            isLoading = false
+            updateDialog.show()
             break
         }
     }
@@ -140,6 +180,14 @@ Page {
         onStateChanged: {
             console.log("state: " + curState)
             serversRetrieval(curState)
+        }
+    }
+
+    Connections {
+        target:OvpnController
+        onVerStateChanged: {
+            console.log("verState: " + curState)
+            versionRetrieval(curState)
         }
     }
 
@@ -165,7 +213,9 @@ Page {
                 enabled: true
                 onClicked: {
                     if (statusText.text == "Disconnected"){
+                        OvpnController.initConnection()
                         //Check for selected server
+                        /*
                         if (OvpnController.serverName === ""){
                             if (mainWindow.servers.length > 0)
                                 serverDialog.show()
@@ -180,7 +230,7 @@ Page {
                         console.log("in connect: login = " + loginState)
 
                         if (loginState == 1)
-                            OvpnController.startConn()
+                            OvpnController.startConn()*/
                     }
                     else {
                         OvpnController.stopConn()
@@ -225,8 +275,11 @@ Page {
                 onClicked: {
                     if (mainWindow.servers.length > 0)
                         serverDialog.show()
-                    else
+                    else{
+                        serverLoading = true
+                //        serverDialog.show()
                         mainWindow.servButtonPressed()
+                    }
                 }
             }
         }
@@ -371,6 +424,12 @@ Page {
         positiveButtonText: "Select Server"
         negativeButtonText: "Cancel"
 
+        ProgressCircle {
+            id: prog
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: connectPage.serverLoading
+        }
+
         QuickControls.ExclusiveGroup {
             id: optionGroup
         }
@@ -399,10 +458,15 @@ Page {
             OvpnController.setServer(servers[serverIndex].address)
             OvpnController.setServerName(servers[serverIndex].name)
             OvpnController.setServerLoad(servers[serverIndex].load)
+            if(controlStatus === 2){
+                OvpnController.initConnection()
+            }
         }
 
         onRejected: {
-
+            if(controlStatus === 2){
+                OvpnController.cancelInitConn()
+            }
         }
 
     }
@@ -427,6 +491,10 @@ Page {
             width: parent.width
         }
 
+        ListItem.Standard{
+            height: Units.dp(5)
+        }
+
         TextField {
             id: passwordField
             placeholderText: "Password"
@@ -448,19 +516,50 @@ Page {
         }
 
         onAccepted: {
-            console.log("in onAccepted: " + usernameField.length + " " + passwordField.length)
-            if (usernameField.length > 0 && passwordField.length > 0){
-                OvpnController.setUserName(usernameField.getText(0, usernameField.length))
-                OvpnController.setUserPass(passwordField.getText(0, passwordField.length))
-                loginState = 1
+            if(controlStatus === 1){
+                if (usernameField.length > 0 && passwordField.length > 0){
+                    OvpnController.setUserName(usernameField.getText(0, usernameField.length))
+                    OvpnController.setUserPass(passwordField.getText(0, passwordField.length))
+                }
+
+                OvpnController.initConnection()
             }
-            else
-                loginState = 0
+            else {
+                console.log("in onAccepted: " + usernameField.length + " " + passwordField.length)
+                if (usernameField.length > 0 && passwordField.length > 0){
+                    OvpnController.setUserName(usernameField.getText(0, usernameField.length))
+                    OvpnController.setUserPass(passwordField.getText(0, passwordField.length))
+                    loginState = 1
+                }
+                else
+                    loginState = 0
+            }
         }
 
         onRejected: {
-            loginState = 0
+            if(controlStatus === 1){
+                OvpnController.cancelInitConn()
+            }
+            else {
+                loginState = 0
+            }
         }
+    }
+
+    Dialog {
+        id: updateDialog
+        width: Units.dp(300)
+        title: "Update"
+        hasActions: true
+        positiveButtonText: "Update"
+        negativeButtonText: "Cancel"
+
+        text: "Update Available"
+
+        onAccepted: {
+            OvpnController.launchUpdater()
+        }
+
     }
 
     Component.onCompleted: {
@@ -479,5 +578,6 @@ Page {
 
         //Attempt Auto-Connect
    //     autoConnect()
+        OvpnController.checkVersion()
     }
 }

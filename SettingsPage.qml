@@ -94,7 +94,7 @@ Item {
                             color: Theme.light.textColor
                         }
                         Label {
-                            text: "0.3"
+                            text: OvpnController.latestVersion//"0.3"
                             color: Theme.light.subTextColor
                         }
                     }
@@ -404,6 +404,10 @@ Item {
             placeholderText: "Username"
             floatingLabel: true
             width: parent.width
+        }
+
+        ListItem.Standard{
+            height: Units.dp(5)
         }
 
         TextField {

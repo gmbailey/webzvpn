@@ -18,6 +18,7 @@
 #include "common.h"
 #include <QTimer>
 #include "thread_oldip.h"
+#include "versionchecker.h"
 
 enum OvpnState {
     OVSTATE_DISCONNECTED = 0,
@@ -26,12 +27,26 @@ enum OvpnState {
     OVSTATE_AUTHORIZING,
     OVSTATE_AUTHFAILED,
     OVSTATE_CONNECTING,
+    OVSTATE_WAIT,
+    OVSTATE_RECONNECTING,
+    OVSTATE_GETCONFIG,
+    OVSTATE_ASSIGNIP,
+    OVSTATE_TCPCONNECT,
     OVSTATE_CONNECTED,
-    OVSTATE_DISCONNECTING,
+    OVSTATE_DISCONNECTING,  //11
+    OVSTATE_INITCONN,
+    OVSTATE_NOLOGIN,
+    OVSTATE_NOSERVER,
 
     OVSTATE_NUM
 };
 
+enum VersionStatus {
+    VERSION_LATEST = 0,
+    VERSION_CHECKING,
+    VERSION_OUTDATED,
+    VERSION_NUM
+};
 
 class OvpnController : public QObject
 {
@@ -54,10 +69,13 @@ class OvpnController : public QObject
     Q_PROPERTY (bool autoReconnect READ getAutoReconnect WRITE setAutoReconnect)
     Q_PROPERTY (bool rememberLogin READ getRememberLogin WRITE setRememberLogin)
     Q_PROPERTY (QString curVersion READ getCurVersion)
+    Q_PROPERTY (QString programStatus READ getProgramStatus NOTIFY progStatusChanged)
+    Q_PROPERTY (QString latestVersion READ getLatestVersion NOTIFY latestVersionChanged)
 
 
 public:
     explicit OvpnController(QObject *parent = 0);
+
     ~OvpnController();
 
     QString getLogText() const;
@@ -95,9 +113,26 @@ public:
     //Version Info
     QString getCurVersion() const;
 
+    //Program Status
+    QString getProgramStatus() const;
+
+    QString getLatestVersion() const;
+
+    //Launch Updater
+    Q_INVOKABLE void launchUpdater();
+
+    //Check UserPass
+    Q_INVOKABLE void initConnection();
+    Q_INVOKABLE void cancelInitConn();
+
+    Q_INVOKABLE void checkVersion();
+
 signals:
     void stateChanged(int ovState);
-    void logTxtChanged(QString & logTxt);
+    void verStateChanged(int curState);
+    void logTxtChanged(QString logTxt);
+
+    void progStatusChanged(QString programStatus);
 
     // Configuration change signals
     void serverChanged(QString &server);
@@ -111,18 +146,20 @@ signals:
     void passwordChanged(QString &pass);
 
     void ipChanged(QString &ip);
+    void latestVersionChanged(QString &version);
 
 public slots:
     void startConn();
     void stopConn();
+    void cancelConn(const QString & msg);
     bool isOvRunning();
-    void readError(QProcess::ProcessError error);
+    void connectError(QProcess::ProcessError error);
     void readData();
     void readStdErr();
     void readStdOut();
     void connectStarted();
 
-    void finished(int exitCode, QProcess::ExitStatus exitStatus);
+    void connectFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void soc_err(QAbstractSocket::SocketError er);
     void soc_readyRead();
     void stChanged(QProcess::ProcessState st);
@@ -130,6 +167,8 @@ public slots:
     void logAppend(const QString &text);
     void logFileChanged(const QString &pfn);
     void killRunningOvpn();
+
+    void setProgramStatus(const QString &value);
 
     // User Cred Settings
     void setUserName(const QString &value);
@@ -154,9 +193,15 @@ public slots:
 
     void timer_CheckState();
 
+    //Launch Updater
+    void launch();
+
+    void setLatestVersion(const QString &value);
+
 private:
     QStringList arguments;
     QString logText;
+    QString programStatus;
 
     //Config Options
     QString server;
@@ -217,6 +262,8 @@ private:
 
     void loadSettings();
 
+    void setVersState(VersionStatus newState);
+
     std::auto_ptr<QFileSystemWatcher> _watcher;
     std::auto_ptr<QTimer> _timer_state;
     std::auto_ptr<Thread_OldIp> _th_oldip;
@@ -224,5 +271,8 @@ private:
     QString oldIp;
 
     QString curVersion;
+    QString latestVersion;
+    VersionChecker * checker;
+    VersionStatus verState;
 };
 #endif // OVPNCONTROLLER_H

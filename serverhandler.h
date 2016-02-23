@@ -2,11 +2,13 @@
 #define SERVERHANDLER_H
 
 #include <QObject>
+#include <QThread>
 #include <QQmlListProperty>
 #include <QDomDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include "serverinfo.h"
+#include "requestworker.h"
 
 enum SHState {
     SHSTATE_DONE = 0,
@@ -32,6 +34,10 @@ public:
     Q_INVOKABLE void setupServerList(const QString &value);
     Q_INVOKABLE void getServerInfo();
     Q_INVOKABLE void changeState(int newState);
+
+    //check for updates
+    Q_INVOKABLE void checkVersion();
+
 public slots:
     void processReply();
 
@@ -39,8 +45,13 @@ public slots:
         getServerInfo();
     }
 
+    void invokeRequestThread();
+    void reqThreadDone();
+    void processResult(const QString &value);
+
 signals:
     void stateChanged(int curState);
+    void resultProcessed();
 
 private:
     QList<ServerInfo *> m_servers;
@@ -49,6 +60,8 @@ private:
 
     SHState curState;
     void setState(SHState newState);
+    RequestWorker * worker;
+    QThread * thread;
 
 };
 #endif // SERVERHANDLER_H
