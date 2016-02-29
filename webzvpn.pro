@@ -41,7 +41,6 @@ SOURCES += main.cpp \
     ministun.c \
     ovmanager.cpp \
     flag.cpp \
-    updatelauncher.cpp \
     requestworker.cpp \
     versionchecker.cpp
 
@@ -72,7 +71,6 @@ HEADERS += \
     ovmanager.h \
     version.h \
     flag.h \
-    updatelauncher.h \
     requestworker.h \
     versionchecker.h
 
