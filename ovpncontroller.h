@@ -71,6 +71,7 @@ class OvpnController : public QObject
     Q_PROPERTY (QString curVersion READ getCurVersion)
     Q_PROPERTY (QString programStatus READ getProgramStatus NOTIFY progStatusChanged)
     Q_PROPERTY (QString latestVersion READ getLatestVersion NOTIFY latestVersionChanged)
+    Q_PROPERTY (QString updateText READ getUpdateText NOTIFY updateTextChanged)
 
 
 public:
@@ -112,6 +113,7 @@ public:
 
     //Version Info
     QString getCurVersion() const;
+    QString getUpdateText() const;
 
     //Program Status
     QString getProgramStatus() const;
@@ -147,6 +149,7 @@ signals:
 
     void ipChanged(QString &ip);
     void latestVersionChanged(QString &version);
+    void updateTextChanged(QString &updText);
 
 public slots:
     void startConn();
@@ -196,7 +199,7 @@ public slots:
     //Launch Updater
     void launch();
 
-    void setLatestVersion(const QString &value);
+    void setLatestVersion(const QString &value, const QString &updText);
 
 private:
     QStringList arguments;
@@ -274,5 +277,6 @@ private:
     QString latestVersion;
     VersionChecker * checker;
     VersionStatus verState;
+    QString updateText;
 };
 #endif // OVPNCONTROLLER_H

@@ -17,7 +17,7 @@ OvpnController::OvpnController(QObject *parent) :
 
     checker = new VersionChecker();
 
-    connect(checker, SIGNAL(completed(QString)), this, SLOT(setLatestVersion(QString)));
+    connect(checker, SIGNAL(completed(QString, QString)), this, SLOT(setLatestVersion(QString, QString)));
 }
 
 OvpnController::~OvpnController(){
@@ -126,6 +126,10 @@ bool OvpnController::getRememberLogin() const{
 
 QString OvpnController::getCurVersion() const{
     return curVersion;
+}
+
+QString OvpnController::getUpdateText() const{
+    return updateText;
 }
 
 QString OvpnController::getProgramStatus() const{
@@ -852,16 +856,18 @@ void OvpnController::launch(){
     qApp->exit();
 }
 
-void OvpnController::setLatestVersion(const QString &value){
+void OvpnController::setLatestVersion(const QString &value, const QString &updText){
     qDebug() << "setLatestVersion";
     if (latestVersion != value){
         latestVersion = value;
     }
     if (latestVersion == curVersion)
         emit verStateChanged(VERSION_LATEST);
-    else
+    else{
+        updateText = updText;
+        emit updateTextChanged(updateText);
         emit verStateChanged(VERSION_OUTDATED);
-
+    }
     emit latestVersionChanged(latestVersion);
 }
 

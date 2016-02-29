@@ -44,12 +44,13 @@ void RequestWorker::requestFinished(QNetworkReply *reply){
     }
 
     else if (url.toString() == "https://webzvpn.ru/update.php"){
-        result = result.split("::")[0];
-        qDebug() << result;
+        QString version = result.split("::")[0];
+ //       result = result.split("::")[0];
+        QString updateText = result.split("::")[1];
 
         reply->deleteLater();
 
-        emit versionReceived(result);
+        emit versionReceived(version, updateText);
     }
 }
 

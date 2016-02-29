@@ -17,11 +17,11 @@ public:
     void getLatest();
 
 public slots:
-    void processResult(const QString &value);
+    void processResult(const QString &value, const QString &updText);
 
 signals:
     void resultProcessed();
-    void completed(const QString &value);
+    void completed(const QString &value, const QString &updText);
 
 private:
     RequestWorker * worker;

@@ -556,6 +556,15 @@ Page {
 
         text: "Update Available"
 
+        ListItem.Standard{
+            height: Units.dp(5)
+        }
+
+        Label {
+            width: parent.width
+            text: OvpnController.updateText
+        }
+
         onAccepted: {
             OvpnController.launchUpdater()
         }

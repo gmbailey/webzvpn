@@ -37,7 +37,7 @@ Item {
                     spacing: Units.dp(25)
                     Icon {
                         id: updIcn
-                        name: "device/access_alarm"
+                        name: "action/update"
                         size: Units.dp(16)
                     }
 
@@ -111,7 +111,7 @@ Item {
                     spacing: Units.dp(25)
                     Icon {
                         id: logIcn
-                        name: "device/access_alarm"
+                        name: "action/account_circle"
                         size: Units.dp(16)
                     }
 
@@ -184,7 +184,7 @@ Item {
                     spacing: Units.dp(25)
                     Icon {
                         id: profileIcn
-                        name: "device/access_alarm"
+                        name: "action/settings_ethernet"
                         size: Units.dp(16)
                     }
 
@@ -206,6 +206,7 @@ Item {
                             text: profileModel[selectedIndex]
                             model: profileModel
                             implicitHeight: Units.dp(20)
+                            subText: ""
                         }
                     }
                 }
@@ -305,7 +306,7 @@ Item {
                     spacing: Units.dp(25)
                     Icon {
                         id: otherIcn
-                        name: "device/access_alarm"
+                        name: "action/settings"
                         size: Units.dp(16)
                     }
                     Column{

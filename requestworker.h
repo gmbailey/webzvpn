@@ -26,7 +26,7 @@ signals:
      void finished();
      void workRequested();
      void resultReceived(QString);
-     void versionReceived(QString);
+     void versionReceived(QString, QString);
 
  private:
      QNetworkAccessManager* manager;

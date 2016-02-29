@@ -4,7 +4,7 @@ import Material.Extras 0.1
 
 ApplicationWindow{
 
-    title: "webzvpn"
+    title: "Webz VPN"
     id: mainWindow
     minimumHeight: Units.dp(630)
     minimumWidth: Units.dp(400)
@@ -97,7 +97,7 @@ ApplicationWindow{
 
     initialPage: TabbedPage {
         id: tabbed
-        title: "webzvpn"
+        title: "Webz VPN"
         /*Tab {
             title: "Status"
             source:Qt.resolvedUrl("qrc:/ConnectPage.qml")
