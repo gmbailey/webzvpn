@@ -41,7 +41,9 @@ SOURCES += main.cpp \
     ministun.c \
     ovmanager.cpp \
     flag.cpp \
-    updatelauncher.cpp
+    updatelauncher.cpp \
+    requestworker.cpp \
+    versionchecker.cpp
 
 RESOURCES += \
     qml.qrc
@@ -70,7 +72,9 @@ HEADERS += \
     ovmanager.h \
     version.h \
     flag.h \
-    updatelauncher.h
+    updatelauncher.h \
+    requestworker.h \
+    versionchecker.h
 
 DISTFILES += \
     webzvpn.exe.manifest
